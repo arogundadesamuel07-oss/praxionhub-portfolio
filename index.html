@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PraxionHub | Digital Experiences That Stand Out</title>
+<meta name="description" content="PraxionHub - High-end digital solutions, web development, and brand identity by Samuel Arogundade.">
+<meta name="keywords" content="Software Engineer, Web Developer, UI/UX Design, Branding, Portfolio">
+<meta property="og:title" content="PraxionHub | Digital Experiences That Stand Out">
+<meta property="og:description" content="Bespoke web and app development solutions for the modern era.">
+<meta property="og:image" content="asset/praxionhub1.png">
+<meta property="og:url" content="https://praxionhub.com">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/png" href="asset/praxionhub1.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<link rel="stylesheet" href="samuel.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="samuel.js" type="module" defer></script>
+ 
+<script>
+  // FAIL-SAFE: This runs even if the 'module' script is blocked by the browser (file:// protocol)
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const loader = document.getElementById('loader');
+      if (loader && !loader.classList.contains('done')) {
+        loader.classList.add('done');
+      }
+    }, 2500); 
+  });
+</script>
+</head>
+<body>
+ 
+<!-- ============================================================
+     CURSOR
+============================================================ -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+ 
+<!-- ============================================================
+     SCROLL PROGRESS
+============================================================ -->
+<div id="scroll-progress" title="Scroll to top"></div>
+ 
+<!-- ============================================================
+     LOADER
+============================================================ -->
+<div id="loader">
+  <div class="loader-logo"><img src="asset/praxionhub1.png" alt="PraxionHub Logo"></div>
+  <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
+  <div class="loader-text">Initializing Praxion Hub...</div>
+</div>
+ 
+<!-- ============================================================
+     TOAST CONTAINER
+============================================================ -->
+<div id="toast-container"></div>
+ 
+<!-- ============================================================
+     BACK TO TOP
+============================================================ -->
+<button id="back-to-top" aria-label="Back to top" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <i class="fa-solid fa-arrow-up"></i>
+</button>
+
+<!-- WhatsApp Sticky Button -->
+<a href="https://wa.me/2348054813821?text=Hello%20Samuel,%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20discuss%20a%20project." class="whatsapp-sticky" target="_blank" aria-label="Chat on WhatsApp" title="Chat on WhatsApp">
+  <i class="fa-brands fa-whatsapp"></i>
+</a>
+ 
+<!-- ============================================================
+     NAVBAR
+============================================================ -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="showPage('home')" style="cursor:none"><img class="load-nav" src="asset/praxionhub1.png" alt="PraxionHub Logo" title="PraxionHub Logo"></div>
+ 
+  <ul class="nav-links">
+    <li><a class="nav-link active" data-page="home" onclick="showPage('home')">Home</a></li>
+    <li><a class="nav-link" data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a></li>
+    <li><a class="nav-link" data-page="services" onclick="showPage('services')">Services</a></li>
+    <li><a class="nav-link" data-page="about" onclick="showPage('about')">About</a></li>
+    <li><a class="nav-link" data-page="request" onclick="showPage('request')">Project Request</a></li>
+    <li><a class="nav-link" data-page="contact" onclick="showPage('contact')">Contact</a></li>
+  </ul>
+ 
+  <div class="nav-actions">
+    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle theme" onclick="toggleTheme()">
+      <i class="fa-solid fa-moon"></i>
+    </button>
+    <button class="hamburger" title="Open Navigations" id="hamburger" aria-label="Menu" onclick="toggleMobileNav()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+ 
+<!-- Mobile Nav -->
+<div class="mobile-nav" id="mobile-nav">
+  <a class="nav-link" onclick="showPage('home');toggleMobileNav()">Home</a>
+  <a class="nav-link" onclick="showPage('portfolio');toggleMobileNav()">Portfolio</a>
+  <a class="nav-link" onclick="showPage('services');toggleMobileNav()">Services</a>
+  <a class="nav-link" onclick="showPage('about');toggleMobileNav()">About</a>
+  <a class="nav-link" onclick="showPage('request');toggleMobileNav()">Project Request</a>
+  <a class="nav-link" onclick="showPage('contact');toggleMobileNav()">Contact</a>
+</div>
+ 
+<!-- ============================================================
+     PRODUCT DETAIL MODAL (Quick View)
+============================================================ -->
+<div class="modal-overlay" id="product-modal" onclick="handleProductOverlayClick(event)">
+  <div class="modal-box product-detail-box">
+    <button class="modal-close" onclick="closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
+    <div id="product-detail-content" class="product-detail-layout">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ██████  HOME PAGE
+============================================================ -->
+<div class="page active" id="page-home">
+ 
+  <!-- Hero -->
+  <section class="hero">
+    
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-noise"></div>
+    
+    <video autoplay muted loop playsinline fetchpriority="high" poster="asset/praxionhub1.png" class="hero-video">
+      <source src="asset/Praxion-video.mp4" type="video/mp4">
+</video>
+ 
+    <div class="hero-content">
+      <div class="hero-tag">
+        <span class="hero-tag-dot"></span>
+        Available for New Projects — 2026
+      </div>
+      <h1 class="hero-h1">
+        I Build Digital<br>Experiences That<br><em>Stand Out.</em>
+      </h1>
+      <div id="typewriter" class="hero-sub" style="min-height: 1.6em; font-weight: 500; color: var(--accent);"></div>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="showPage('portfolio')">
+          View Work <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <button class="btn-secondary" onclick="showPage('contact')">
+          Hire Me
+        </button>
+      </div>
+    </div>
+ 
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">150+</div>
+        <div class="stat-label">Projects Completed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">12</div>
+        <div class="stat-label">Industry Awards</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">99%</div>
+        <div class="stat-label">Satisfaction</div>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- Featured Products -->
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Showcase</span>
+      <h2 class="section-title">Selected<br>Works</h2>
+      <p class="section-sub">A glimpse into digital solutions crafted with precision and passion.</p>
+    </div>
+    <div class="product-grid" id="featured-grid"></div>
+    <div style="text-align:center;margin-top:48px" class="reveal">
+      <button class="btn-secondary" onclick="showPage('portfolio')">
+        Explore Full Portfolio <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </section>
+ 
+  <!-- Brand Trust -->
+  <div class="brand-strip">
+    <div class="brand-track" id="brand-track"></div>
+  </div>
+ 
+  <!-- Testimonials -->
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Client Success</span>
+      <h2 class="section-title">Trusted by<br>Industry Leaders</h2>
+    </div>
+    <div class="testimonials-wrap">
+      <div class="testimonials-track" id="testimonials-track"></div>
+    </div>
+  </section>
+ 
+  <!-- CTA Banner -->
+  <section class="section" style="padding-top:0">
+    <div class="reveal" style="
+      background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(232,255,71,0.08) 100%);
+      border: 1px solid var(--bg-glass-border); border-radius: var(--radius-xl);
+      padding: clamp(40px,6vw,80px); text-align:center;
+      position:relative; overflow:hidden;
+    ">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(232,255,71,0.05),transparent 70%)"></div>
+      <div style="position:relative;z-index:1">
+        <span class="section-eyebrow">Collaboration</span>
+        <h2 style="font-family:var(--font-display);font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-2px;margin-bottom:16px">
+          Let's Build Your<br>Digital Legacy
+        </h2>
+        <p style="color:var(--text-muted);max-width:420px;margin:0 auto 32px;font-size:16px;font-weight:300">
+          Available for freelance opportunities and long-term partnerships.
+        </p>
+        <button class="btn-primary" onclick="showPage('contact')">
+          Start a Project <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <div class="nav-logo"><img class="nav-logo-img" src="asset/praxionhub1.png" alt="PraxionHub Logo"></div>
+        <p class="footer-brand-desc">High-end digital solutions for brands that want to stand out in the future.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Navigation</div>
+        <div class="footer-links">
+          <a onclick="showPage('portfolio')">Full Portfolio</a>
+          <a onclick="showPage('services')">Our Services</a>
+          <a onclick="showPage('about')">About Me</a>
+          <a onclick="showPage('contact')">Start a Project</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Expertise</div>
+        <div class="footer-links">
+          <a href="#">Web Development</a>
+          <a href="#">Mobile Apps</a>
+          <a href="#">Brand Identity</a>
+          <a href="#">UI/UX Design</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Legal</div>
+        <div class="footer-links">
+          <a onclick="showPage('privacy')">Privacy Policy</a>
+          <a onclick="showPage('terms')">Terms of Service</a>
+          <a onclick="showPage('cookie')">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PraxionHub Design by Samuel Arogundade.</span>
+      <div class="footer-social">
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+        <a href="#"><i class="fa-brands fa-pinterest"></i></a>
+      </div>
+    </div>
+  </footer>
+</div>
+ 
+<!-- ============================================================
+     ██████  PORTFOLIO PAGE
+============================================================ -->
+<div class="page" id="page-portfolio">
+  <div class="shop-header">
+    <div class="section-header" style="margin-bottom:0">
+      <span class="section-eyebrow">Case Studies</span>
+      <h1 class="section-title">Portfolio</h1>
+    </div>
+    <div class="shop-filters">
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="shop-search" placeholder="Search projects…" oninput="filterProducts()" />
+      </div>
+      <div class="filter-btns" id="filter-btns">
+        <button class="filter-btn active" data-cat="all" onclick="setFilter(this,'all')">All</button>
+        <button class="filter-btn" data-cat="web" onclick="setFilter(this,'web')">Web</button>
+        <button class="filter-btn" data-cat="app" onclick="setFilter(this,'app')">Apps</button>
+        <button class="filter-btn" data-cat="design" onclick="setFilter(this,'design')">Branding</button>
+      </div>
+    </div>
+  </div>
+  <div class="shop-grid-wrap">
+    <div class="shop-results-count" id="shop-results-count"></div>
+    <div class="product-grid" id="shop-grid"></div>
+  </div>
+  <div class="portfolio-cta-section reveal" style="text-align: center; padding: 40px 0 120px;">
+    <button class="cta-blue-btn" onclick="showPage('contact')">
+      Click here to make yours be the next <i class="fa-solid fa-rocket"></i>
+    </button>
+  </div>
+</div>
+ 
+<!-- ============================================================
+     ██████  PROJECT REQUEST PAGE
+============================================================ -->
+<div class="page" id="page-request">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Collaboration</span>
+      <h1 class="section-title">Start Your<br>Digital Journey</h1>
+      <p class="section-sub">Describe your problem, record your thoughts, or upload existing documents. Let's build the solution together.</p>
+    </div>
+
+    <div class="contact-form-card reveal" style="max-width: 800px; margin: 0 auto;">
+      <div class="form-row">
+        <label class="form-label">Project Description & Problem Statement</label>
+        <div style="position: relative;">
+          <textarea class="form-input" id="request-description" placeholder="What problem can I solve for you?..." style="padding-right: 50px; min-height: 200px;"></textarea>
+          <button id="voice-btn" class="nav-icon-btn" style="position: absolute; right: 12px; top: 12px; border-radius: 50%;" title="Speak your request">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+        </div>
+        <p id="voice-status" style="font-size: 11px; color: var(--accent-glow); margin-top: 8px; display: none;"><i class="fa-solid fa-circle-dot fa-beat"></i> Listening... click microphone again to stop.</p>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Attachments (Images, Videos, PDF, Docs)</label>
+        <div id="drop-zone" class="drop-zone">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; color: var(--accent); margin-bottom: 12px;"></i>
+          <p style="font-size: 14px; color: var(--text-muted);">Drag & drop files here or <span style="color: var(--accent-glow); font-weight: 600;">browse</span></p>
+          <input type="file" id="request-files" multiple hidden accept="image/*,video/*,.pdf,.doc,.docx" />
+        </div>
+        <div id="file-preview-container" class="file-preview-grid"></div>
+      </div>
+
+      <button class="submit-btn" onclick="handleProjectRequest()">
+        <i class="fa-solid fa-paper-plane"></i> Submit Request
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================
+     ██████  SERVICES PAGE
+============================================================ -->
+<div class="page" id="page-services">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Expertise</span>
+      <h1 class="section-title">Digital<br>Solutions</h1>
+      <p class="section-sub">End-to-end development and design services tailored for high-growth brands.</p>
+    </div>
+    <div class="services-grid" id="services-grid"></div>
+  </section>
+ 
+  <!-- Stats Banner -->
+  <section class="section" style="padding-top:0">
+    <div class="reveal" style="
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:1px; background:var(--bg-glass-border);
+      border:1px solid var(--bg-glass-border); border-radius:var(--radius-xl); overflow:hidden;
+    ">
+      <div style="background:var(--bg);padding:40px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--accent)">99%</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Uptime Guaranteed</div>
+      </div>
+      <div style="background:var(--bg);padding:40px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--accent)">24h</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Response Time</div>
+      </div>
+      <div style="background:var(--bg);padding:40px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--accent)">AES</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Secure Payments</div>
+      </div>
+      <div style="background:var(--bg);padding:40px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--accent)">30d</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Free Returns</div>
+      </div>
+    </div>
+  </section>
+</div>
+ 
+<!-- ============================================================
+     ██████  ABOUT PAGE
+============================================================ -->
+<div class="page" id="page-about">
+  <div class="about-hero">
+    <div class="about-story-text reveal">
+      <span class="section-eyebrow">The Founder</span>
+      <h1 class="section-title">Built for<br>the Bold</h1>
+      <p>I am Samuel Arogundade, a software engineer and creative director dedicated to building high-performance digital products. PraxionHub Design was founded on the principle that code should be as beautiful as it is functional.</p>
+      <p>With a background in full-stack engineering and visual branding, I help businesses bridge the gap between their vision and a market-ready product.</p>
+      
+      <!-- Skills Section -->
+      <div class="skills-grid">
+        <div class="skill-item">
+          <div class="skill-info"><span>Web Development</span><span class="skill-val">95%</span></div>
+          <div class="skill-bar"><div class="skill-progress" data-width="95%"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-info"><span>App Development</span><span class="skill-val">88%</span></div>
+          <div class="skill-bar"><div class="skill-progress" data-width="88%"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-info"><span>Branding & UI/UX</span><span class="skill-val">92%</span></div>
+          <div class="skill-bar"><div class="skill-progress" data-width="92%"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-info"><span>Graphics Expert</span><span class="skill-val">90%</span></div>
+          <div class="skill-bar"><div class="skill-progress" data-width="90%"></div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:40px">
+        <button class="btn-primary" onclick="showPage('portfolio')">View My Portfolio <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+    <div class="about-visual reveal">
+      <div class="profile-card">
+        <div class="profile-img-container">
+           <img src="asset/sam business pic.png" alt="Samuel Arogundade">
+           <div class="profile-glow"></div>
+        </div>
+        <div class="profile-badge">Samuel A.</div>
+      </div>
+    </div>
+  </div>
+ 
+  <section class="section" style="padding-top:0">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">The People</span>
+      <h2 class="section-title">Meet the Team</h2>
+    </div>
+    <div class="team-grid" id="team-grid"></div>
+  </section>
+</div>
+ 
+<!-- ============================================================
+     ██████  CONTACT PAGE
+============================================================ -->
+<div class="page" id="page-contact">
+  <div class="contact-layout">
+    <div>
+      <span class="section-eyebrow reveal">Get in Touch</span>
+      <h1 class="section-title reveal" style="margin-bottom:32px">Let's Talk.</h1>
+ 
+      <div class="contact-info-item reveal">
+        <div class="contact-info-icon"><i class="fa-solid fa-envelope"></i></div>
+        <div>
+          <div class="contact-info-label">Email</div>
+          <div class="contact-info-val">arogundadesamuel07@gmail.com<br>arogundadesamuel95@gmail.com</div>
+        </div>
+      </div>
+      <div class="contact-info-item reveal">
+        <div class="contact-info-icon"><i class="fa-solid fa-phone"></i></div>
+        <div>
+          <div class="contact-info-label">Phone</div>
+          <div class="contact-info-val">+234 704 300 5358</div>
+        </div>
+      </div>
+      <div class="contact-info-item reveal">
+        <div class="contact-info-icon"><i class="fa-solid fa-location-dot"></i></div>
+        <div>
+          <div class="contact-info-label">Office</div>
+          <div class="contact-info-val">Ondo, Nigeria.</div>
+        </div>
+      </div>
+      <div class="contact-info-item reveal">
+        <div class="contact-info-icon"><i class="fa-solid fa-clock"></i></div>
+        <div>
+          <div class="contact-info-label">Hours</div>
+          <div class="contact-info-val">Mon–Fri, 9am – 6pm </div>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="contact-form-card reveal">
+      <h2 style="font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:-1px;margin-bottom:6px">Send a Message</h2>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:28px;font-weight:300">We reply within 24 hours.</p>
+ 
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-input" id="contact-fname" placeholder="Alex" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-input" id="contact-lname" placeholder="Smith" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="contact-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Company</label>
+        <input type="text" class="form-input" id="contact-company" placeholder="Name of your company" required />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" class="form-input" id="contact-phone" placeholder="Your phone number / whatsapp no." />
+      </div> 
+      <div class="form-row">
+        <label class="form-label">Subject</label>
+        <input type="text" class="form-input" id="contact-subject" placeholder="How can we help?" />
+      </div>
+      <div class="form-row">
+        <label class="form-label">Message</label>
+        <textarea class="form-input" id="contact-message" placeholder="Tell us everything…"></textarea>
+      </div>
+      <button class="submit-btn" onclick="handleContact()">
+        <i class="fa-solid fa-paper-plane"></i> Send Message
+      </button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ============================================================
+     ██████  LEGAL PAGES (Privacy, Terms, Cookie)
+============================================================ -->
+<div class="page" id="page-privacy">
+  <section class="section">
+    <div class="legal-container reveal">
+      <span class="section-eyebrow">Legal</span>
+      <h1 class="section-title">Privacy Policy</h1>
+      <div class="legal-content">
+        <p>Last updated: June 2026</p>
+        <h3>1. Information Collection</h3>
+        <p>We collect information you provide directly to us through project requests and contact forms. This may include your name, email address, company name, and project details.</p>
+        <h3>2. Use of Information</h3>
+        <p>We use the information we collect to provide, maintain, and improve our services, communicate with you, and develop new digital solutions.</p>
+        <h3>3. Data Security</h3>
+        <p>We take reasonable measures to help protect information about you from loss, theft, misuse, and unauthorized access.</p>
+        <button class="btn-secondary" style="margin-top: 32px;" onclick="showPage('home')">Back to Home</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="page" id="page-terms">
+  <section class="section">
+    <div class="legal-container reveal">
+      <span class="section-eyebrow">Legal</span>
+      <h1 class="section-title">Terms of Service</h1>
+      <div class="legal-content">
+        <p>Last updated: June 2026</p>
+        <h3>1. Acceptance of Terms</h3>
+        <p>By accessing PraxionHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>
+        <h3>2. Intellectual Property</h3>
+        <p>Unless otherwise stated, PraxionHub and/or its licensors own the intellectual property rights for all material on this website. All intellectual property rights are reserved.</p>
+        <h3>3. Project Collaboration</h3>
+        <p>Project timelines and deliverables are established via individual contracts. Initial consultations do not constitute a binding agreement to provide services.</p>
+        <button class="btn-secondary" style="margin-top: 32px;" onclick="showPage('home')">Back to Home</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="page" id="page-cookie">
+  <section class="section">
+    <div class="legal-container reveal">
+      <span class="section-eyebrow">Legal</span>
+      <h1 class="section-title">Cookie Policy</h1>
+      <div class="legal-content">
+        <p>Last updated: June 2026</p>
+        <h3>1. What are Cookies?</h3>
+        <p>Cookies are small text files stored on your device that help us improve your experience on our site.</p>
+        <h3>2. How We Use Cookies</h3>
+        <p>We use essential cookies to maintain your theme preferences (dark/light mode) and analytics cookies to understand how visitors interact with our portfolio.</p>
+        <h3>3. Your Choices</h3>
+        <p>Most web browsers allow you to control cookies through their settings. Please note that disabling cookies may affect the functionality of this website.</p>
+        <button class="btn-secondary" style="margin-top: 32px;" onclick="showPage('home')">Back to Home</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>
