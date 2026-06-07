@@ -223,8 +223,8 @@ async function handleProjectRequest() {
     const uploadedUrls = [];
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
-      // Sanitize filename: replace spaces with underscores and add index to ensure uniqueness
-      const sanitizedName = file.name.replace(/\s+/g, '_');
+      // Sanitize filename: remove special characters and add timestamp to prevent collisions
+      const sanitizedName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
       const fileName = `${Date.now()}-${i}-${sanitizedName}`;
       
       const { error: uploadError } = await supabase.storage
