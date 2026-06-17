@@ -15,10 +15,12 @@
 <link rel="icon" type="image/png" href="asset/praxionhub1.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <link rel="stylesheet" href="samuel.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
 <script src="samuel.js" type="module" defer></script>
  
 <script>
@@ -29,7 +31,7 @@
       if (loader && !loader.classList.contains('done')) {
         loader.classList.add('done');
       }
-    }, 2500); 
+    }, 1500); 
   });
 </script>
 </head>
@@ -81,6 +83,7 @@
   <ul class="nav-links">
     <li><a class="nav-link active" data-page="home" onclick="showPage('home')">Home</a></li>
     <li><a class="nav-link" data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a></li>
+    <li><a class="nav-link" data-page="featured-businesses" onclick="showPage('featured-businesses')">Featured Businesses</a></li>
     <li><a class="nav-link" data-page="services" onclick="showPage('services')">Services</a></li>
     <li><a class="nav-link" data-page="about" onclick="showPage('about')">About</a></li>
     <li><a class="nav-link" data-page="request" onclick="showPage('request')">Project Request</a></li>
@@ -88,23 +91,27 @@
   </ul>
  
   <div class="nav-actions">
-    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle theme" onclick="toggleTheme()">
-      <i class="fa-solid fa-moon"></i>
-    </button>
-    <button class="hamburger" title="Open Navigations" id="hamburger" aria-label="Menu" onclick="toggleMobileNav()">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
- 
+      <button id="theme-toggle" aria-label="Toggle theme" title="Toggle theme" onclick="toggleTheme()">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+      <button id="connection-status" class="nav-status" type="button" aria-label="Network status" title="Network status">
+        <i class="fa-solid fa-wifi"></i>
+        <span id="connection-text">Online</span>
+      </button>
+      <button class="hamburger" title="Open Navigations" id="hamburger" aria-label="Menu" onclick="toggleMobileNav()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
 <!-- Mobile Nav -->
 <div class="mobile-nav" id="mobile-nav">
-  <a class="nav-link" onclick="showPage('home');toggleMobileNav()">Home</a>
-  <a class="nav-link" onclick="showPage('portfolio');toggleMobileNav()">Portfolio</a>
-  <a class="nav-link" onclick="showPage('services');toggleMobileNav()">Services</a>
-  <a class="nav-link" onclick="showPage('about');toggleMobileNav()">About</a>
-  <a class="nav-link" onclick="showPage('request');toggleMobileNav()">Project Request</a>
-  <a class="nav-link" onclick="showPage('contact');toggleMobileNav()">Contact</a>
+  <a class="nav-link" data-page="home" onclick="showPage('home');toggleMobileNav()">Home</a>
+  <a class="nav-link" data-page="portfolio" onclick="showPage('portfolio');toggleMobileNav()">Portfolio</a>
+  <a class="nav-link" data-page="featured-businesses" onclick="showPage('featured-businesses');toggleMobileNav()">Featured Businesses</a>
+  <a class="nav-link" data-page="services" onclick="showPage('services');toggleMobileNav()">Services</a>
+  <a class="nav-link" data-page="about" onclick="showPage('about');toggleMobileNav()">About</a>
+  <a class="nav-link" data-page="request" onclick="showPage('request');toggleMobileNav()">Project Request</a>
+  <a class="nav-link" data-page="contact" onclick="showPage('contact');toggleMobileNav()">Contact</a>
 </div>
  
 <!-- ============================================================
@@ -115,6 +122,61 @@
     <button class="modal-close" onclick="closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
     <div id="product-detail-content" class="product-detail-layout">
       <!-- Content injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAYMENT METHOD MODAL
+============================================================ -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal-box payment-selector-box" style="max-width: 450px; text-align: center;">
+    <button class="modal-close" onclick="closePaymentModal()"><i class="fa-solid fa-xmark"></i></button>
+    <div id="payment-methods-selection">
+      <h2 class="modal-title">Secure Checkout</h2>
+      <p class="modal-sub">Total Amount: <strong style="color: var(--accent); font-size: 1.2em;">₦<span id="payment-modal-amount">0</span></strong></p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">Please select your preferred payment gateway</p>
+      
+      <div class="payment-options-grid">
+        <button class="payment-opt-btn paystack" onclick="initiateSelectedPayment('paystack')">
+          <div class="opt-icon"><i class="fa-solid fa-credit-card"></i></div>
+          <div class="opt-text">
+            <span class="opt-title">Paystack Checkout</span>
+            <span class="opt-desc">Cards, Bank Transfer, USSD</span>
+          </div>
+        </button>
+        <button class="payment-opt-btn opay" onclick="initiateSelectedPayment('opay')">
+          <div class="opt-icon"><i class="fa-solid fa-wallet"></i></div>
+          <div class="opt-text">
+            <span class="opt-title">Manual Transfer (OPay)</span>
+            <span class="opt-desc">Fast approval via Direct Transfer</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Manual Transfer Details -->
+    <div id="manual-transfer-details" style="display: none; text-align: left;">
+      <h2 class="modal-title" style="text-align: center; margin-bottom: 20px;">Manual Transfer</h2>
+      <div style="background: var(--bg-glass); border: 1px solid var(--bg-glass-border); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--bg-glass-border); padding-bottom: 8px;">
+          <span style="color: var(--text-muted);">Amount to Pay:</span>
+          <strong style="color: var(--accent);">₦<span id="transfer-amt">0</span></strong>
+        </div>
+        <div style="margin-bottom: 8px;"><span style="color: var(--text-muted); font-size: 13px;">Bank Name</span><br><strong>OPay / Digital</strong></div>
+        <div style="margin-bottom: 8px;"><span style="color: var(--text-muted); font-size: 13px;">Account Number</span><br><strong style="font-size: 1.2em; letter-spacing: 1px;">7043005358</strong></div>
+        <div style="margin-bottom: 8px;"><span style="color: var(--text-muted); font-size: 13px;">Account Number (Click to Copy)</span><br>
+          <strong style="font-size: 1.2em; letter-spacing: 1px; cursor: pointer; color: var(--accent);" onclick="copyToClipboard('7043005358')" title="Click to copy">7043005358 <i class="fa-regular fa-copy" style="font-size: 0.8em; margin-left: 5px;"></i></strong>
+        </div>
+        <div><span style="color: var(--text-muted); font-size: 13px;">Account Holder</span><br><strong>Samuel Arogundade</strong></div>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+        <i class="fa-solid fa-circle-info" style="color: var(--accent);"></i> Once transferred, click the button below. Your ad will be reviewed and approved within 2-4 hours.
+      </p>
+      <div style="display: grid; gap: 10px;">
+        <button class="btn-primary" style="width: 100%;" onclick="confirmManualTransfer()">I've Sent the Money</button>
+        <button class="btn-secondary" style="width: 100%; font-size: 13px;" onclick="showPaymentMethods()">Choose another method</button>
+      </div>
     </div>
   </div>
 </div>
@@ -156,16 +218,16 @@
  
     <div class="hero-stats">
       <div class="stat-item">
-        <div class="stat-num">150+</div>
-        <div class="stat-label">Projects Completed</div>
+        <div class="stat-num">15+</div>
+        <div class="stat-label">Projects Delivered</div>
       </div>
       <div class="stat-item">
-        <div class="stat-num">12</div>
-        <div class="stat-label">Industry Awards</div>
+        <div class="stat-num">11</div>
+        <div class="stat-label">Happy Clients</div>
       </div>
       <div class="stat-item">
-        <div class="stat-num">99%</div>
-        <div class="stat-label">Satisfaction</div>
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Code</div>
       </div>
     </div>
   </section>
@@ -181,6 +243,21 @@
     <div style="text-align:center;margin-top:48px" class="reveal">
       <button class="btn-secondary" onclick="showPage('portfolio')">
         Explore Full Portfolio <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- Featured Businesses -->
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Advertisers</span>
+      <h2 class="section-title">Featured Businesses</h2>
+      <p class="section-sub">Discover promoted brands and businesses advertising on PraxionHub.</p>
+    </div>
+    <div class="business-grid" id="home-featured-businesses"></div>
+    <div style="text-align:center;margin-top:32px" class="reveal">
+      <button class="btn-secondary" onclick="showPage('featured-businesses')">
+        Explore All Businesses And Promote Yours <i class="fa-solid fa-arrow-right"></i>
       </button>
     </div>
   </section>
@@ -237,6 +314,7 @@
         <div class="footer-links">
           <a onclick="showPage('portfolio')">Full Portfolio</a>
           <a onclick="showPage('services')">Our Services</a>
+          <a onclick="showPage('faq')">FAQ</a>
           <a onclick="showPage('about')">About Me</a>
           <a onclick="showPage('contact')">Start a Project</a>
         </div>
@@ -259,18 +337,210 @@
         </div>
       </div>
     </div>
+
     <div class="footer-bottom">
       <span>© 2026 PraxionHub Design by Samuel Arogundade.</span>
       <div class="footer-social">
-        <a href="#"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
-        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
-        <a href="#"><i class="fa-brands fa-pinterest"></i></a>
+        <a title="Still under process" href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="https://x.com/SamuelArog24541" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+        <a title="Still under process" href="#"><i class="fa-brands fa-tiktok"></i></a>
       </div>
     </div>
   </footer>
 </div>
- 
+
+<!-- FEATURED BUSINESSES PAGE -->
+<div class="page" id="page-featured-businesses">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Business Ads</span>
+      <h1 class="section-title">Featured Businesses</h1>
+      <p class="section-sub">Browse advertised businesses, filter by category, and connect directly with promoted brands.</p>
+    </div>
+
+    <div class="business-actions-bar reveal">
+      <div class="search-primary">
+        <div class="search-icon-box"><i class="fa-solid fa-magnifying-glass"></i></div>
+        <input id="business-search" type="text" placeholder="Search businesses, locations, or keywords..." oninput="renderBusinessDirectory()" />
+      </div>
+      
+      <div class="filter-controls-group">
+        <div class="filter-select-wrapper">
+          <i class="fa-solid fa-layer-group"></i>
+          <select id="business-category-filter" onchange="renderBusinessDirectory()">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrapper">
+          <i class="fa-solid fa-circle-check"></i>
+          <select id="business-status-filter" onchange="renderBusinessDirectory()">
+            <option value="all">All Statuses</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending Review</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+
+        <button class="btn-primary advertise-cta-btn" onclick="showPage('advertise')">
+          <i class="fa-solid fa-plus"></i> Advertise
+        </button>
+      </div>
+    </div>
+
+    <div class="business-grid" id="business-directory-grid"></div>
+  </section>
+</div>
+
+<!-- ADVERTISEMENT SUBMISSION PAGE -->
+<div class="page" id="page-advertise">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Advertise</span>
+      <h1 class="section-title">Submit Your Business Advertisement</h1>
+      <p class="section-sub">Create a professional listing, choose a package, and process payment securely with Paystack.</p>
+    </div>
+
+    <div class="advertise-form-card reveal">
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Business Name</label>
+          <input class="form-input" id="ad-business-name" placeholder="Acme Studios" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Owner Name</label>
+          <input class="form-input" id="ad-owner-name" placeholder="Samuel Arogundade" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" id="ad-email" type="email" placeholder="hello@acmehub.com" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" id="ad-phone" type="tel" placeholder="+234 800 123 4567" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">WhatsApp Number</label>
+          <input class="form-input" id="ad-whatsapp" placeholder="+234 800 123 4567" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Business Category</label>
+          <select class="form-input" id="ad-category"></select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Advertisement Title</label>
+          <input class="form-input" id="ad-title" placeholder="Brand Launch Special" />
+        </div>
+        <div class="form-row form-row-full">
+          <label class="form-label">Advertisement Description</label>
+          <textarea class="form-input" id="ad-description" rows="5" placeholder="Describe your product, service or event in 120-200 words."></textarea>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Website URL</label>
+          <input class="form-input" id="ad-website" type="url" placeholder="https://yourbusiness.com" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Business Location</label>
+          <input class="form-input" id="ad-location" placeholder="Lagos, Nigeria" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Banner Image Upload</label>
+          <input class="form-input" id="ad-banner" type="file" accept="image/png,image/jpeg,image/webp" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Advertisement Duration</label>
+          <select class="form-input" id="ad-duration" onchange="updatePackageAmount()">
+            <option value="1">1 day (Basic)</option>
+            <option value="2">2 days (Basic)</option>
+            <option value="7">7 days (Basic)</option>
+            <option value="30">30 days (Basic)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Advertisement Package</label>
+          <select class="form-input" id="ad-package" onchange="updatePackageAmount()">
+            <option value="basic">Basic</option>
+            <option value="standard">Standard</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="advertise-sidebar">
+        <div class="package-summary reveal">
+          <h2>Package Summary</h2>
+          <div class="package-detail"><span>Plan</span><strong id="summary-package">...</strong></div>
+          <div class="package-detail"><span>Timeframe</span><strong id="summary-duration">...</strong></div>
+          <div class="package-detail"><span>Total Due</span><strong id="summary-amount">₦0</strong></div>
+          <p class="package-note">Payments are processed securely with Paystack. Your advertisement will be submitted for review after payment.</p>
+        </div>
+        <button id="ad-submit-btn" class="btn-primary submit-btn" style="width: 100%;" onclick="handleAdvertiseSubmit()">Pay & Submit Advertisement</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ADVERTISEMENT DETAILS PAGE -->
+<div class="page" id="page-ad-details">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Advertisement</span>
+      <h1 class="section-title" id="detail-business-name">Business Title</h1>
+      <p class="section-sub" id="detail-business-category">Category • Location</p>
+    </div>
+
+    <div class="ad-detail-layout reveal">
+      <div class="ad-detail-hero" id="detail-banner"></div>
+      <div class="ad-detail-copy">
+        <div class="ad-detail-meta">
+          <span id="detail-status" class="badge"></span>
+          <span id="detail-duration"></span>
+          <span id="detail-expiration"></span>
+        </div>
+        <p id="detail-description"></p>
+        <div class="ad-detail-actions">
+          <a id="detail-website" class="btn-secondary" target="_blank">Visit Website</a>
+          <a id="detail-whatsapp" class="btn-primary" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ADMIN DASHBOARD PAGE -->
+<div class="page" id="page-admin">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Admin Control</span>
+      <h1 class="section-title">Advertisement Dashboard</h1>
+      <p class="section-sub">Manage submissions, review payments, approve listings, and monitor active revenue.</p>
+    </div>
+
+    <div class="admin-stats-grid" id="admin-stats-grid"></div>
+    <div class="admin-controls reveal">
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="admin-search" type="text" placeholder="Search advertisers, titles, or email..." oninput="renderAdminDashboard()" />
+      </div>
+      <div class="business-filters-row">
+        <select id="admin-category-filter" onchange="renderAdminDashboard()">
+          <option value="all">All Categories</option>
+        </select>
+        <select id="admin-status-filter" onchange="renderAdminDashboard()">
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="suspended">Suspended</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="admin-ad-table" class="admin-table reveal"></div>
+  </section>
+</div>
+
 <!-- ============================================================
      ██████  PORTFOLIO PAGE
 ============================================================ -->
@@ -316,6 +586,17 @@
     </div>
 
     <div class="contact-form-card reveal" style="max-width: 800px; margin: 0 auto;">
+      <div class="form-grid" style="margin-bottom: 18px;">
+        <div class="form-row">
+          <label class="form-label">Your Name</label>
+          <input type="text" class="form-input" id="request-name" placeholder="John Doe" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-input" id="request-email" placeholder="john@example.com" />
+        </div>
+      </div>
+
       <div class="form-row">
         <label class="form-label">Project Description & Problem Statement</label>
         <div style="position: relative;">
@@ -383,7 +664,80 @@
     </div>
   </section>
 </div>
- 
+
+<!-- ============================================================
+     ██████  FAQ PAGE
+============================================================ -->
+<div class="page" id="page-faq">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Questions</span>
+      <h1 class="section-title">Frequently Asked<br>Questions</h1>
+      <p class="section-sub">Find answers to common questions about my services, process, and how we can work together.</p>
+    </div>
+
+    <div class="faq-grid">
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span>What services does PraxionHub provide?</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <p>We provide end-to-end digital solutions, specializing in custom web development, cross-platform mobile applications, branding, and UI/UX design tailored for modern businesses.</p>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span>How long does a typical project take?</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <p>Timelines depend on complexity. A professional landing page usually takes 1-2 weeks, while full-scale web or mobile applications typically range from 6 to 12 weeks.</p>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span>What are your pricing and payment models?</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <p>We offer variable-price quotes for defined projects and retainer models for ongoing support. Payments are structured in milestones to ensure transparency and security.</p>
+        </div>
+      </div>
+
+      
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span>Do you offer support after the project is finished?</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <p>Yes, we provide post-launch maintenance, performance monitoring, and security updates to ensure your digital product continues to perform optimally as you scale.</p>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span>How do we begin working together?</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <p>The best way to start is to click the "Get in Touch" button below or reaching out via WhatsApp. We'll schedule a discovery call to discuss your vision and provide a detailed proposal.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-cta reveal" style="text-align: center; padding: 60px 0;">
+      <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 16px;">Still have questions? Let's connect!</p>
+      <button class="btn-primary" onclick="showPage('contact')">
+        Get in Touch <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </section>
+</div>
+
 <!-- ============================================================
      ██████  ABOUT PAGE
 ============================================================ -->
@@ -452,7 +806,7 @@
         <div class="contact-info-icon"><i class="fa-solid fa-envelope"></i></div>
         <div>
           <div class="contact-info-label">Email</div>
-          <div class="contact-info-val">arogundadesamuel07@gmail.com<br>arogundadesamuel95@gmail.com</div>
+          <div class="contact-info-val">arogundadesamuel07@gmail.com</div>
         </div>
       </div>
       <div class="contact-info-item reveal">
@@ -579,6 +933,5 @@
   </section>
 </div>
 
-<button>here to see you</button>
 </body>
 </html>

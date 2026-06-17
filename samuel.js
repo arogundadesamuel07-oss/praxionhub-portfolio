@@ -1,8 +1,5 @@
-/* ============================================================
-   IMPORTS (Must be at the top)
-============================================================ */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+// Removed top-level blocking imports to ensure the site logic runs immediately.
+// External services like Firebase are now loaded dynamically at the bottom.
 
 /* ============================================================
    SUPABASE CONFIGURATION
@@ -10,6 +7,10 @@ import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10
 const supabaseUrl = 'https://nzrmcmswxdyheaxjvyuk.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56cm1jbXN3eGR5aGVheGp2eXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MTAwMzIsImV4cCI6MjA5NDM4NjAzMn0.gpLjFE4f6TOQxCVE6bePDgYSY-XX2O3YCogJEYXr-bQ';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const PAYSTACK_PUBLIC_KEY = 'pk_live_da0319d19293dcb1623e785588fe1506671c2df0'; 
+let ADVERTISEMENTS = [];
+let homeAdInterval = null;
+let pendingAdData = null;
 
 /* ============================================================
    DATA
@@ -39,9 +40,9 @@ const PRODUCTS = [
 ];
 
 const TESTIMONIALS = [
-  { text:'Samuel transformed our vision into a digital masterpiece. The animations are world-class.', name:'Sarah Jenkins', handle:'@ceo_vanta', initials:'SJ' },
-  { text:'PraxionHub design is unmatched. Our app downloads tripled after the redesign.', name:'Marcus Chen', handle:'@marcus_dev', initials:'MC' },
-  { text:'Fast, efficient, and creatively brilliant. Samuel is the greatest developer we have worked with.', name:'David Okafor', handle:'@startup_founder', initials:'DO' },
+  { text:'Samuel transformed our vision into a digital masterpiece. The animations are world-class.', name:'Tobi Adeyemi', handle:'@tobi_ceo', initials:'TA' },
+  { text:'PraxionHub design is unmatched. Our app downloads tripled after the redesign.', name:'Chioma Okoro', handle:'@chioma_dev', initials:'CO' },
+  { text:'Fast, efficient, and creatively brilliant. Samuel is the greatest developer we have worked with.', name:'Olumide Bakare', handle:'@olu_founder', initials:'OB' },
 ];
 
 const BRANDS = ['Boutiques', 'Professional businesses', 'Catering', 'Bakery', 'Schools', 'Stations', 'Churches', 'Salons', 'Freelancers', 'Agencies', 'Restaurants', 'Fitness Centers', 'Singers', 'industries', 'and more...'];
@@ -53,7 +54,504 @@ const SERVICES_DATA = [
   { icon:'fa-solid fa-fingerprint', title:'Branding', desc:'Complete brand identity systems including logos, style guides, and digital brand voice.' },
 ];
 
-const TEAM_DATA = [{ name:'Samuel Arogundade', role:'Founder & Creative Lead', bio:'Engineer at heart, designer by soul. Building the future of the web.', initials:'SA', color:'#7c3aed', img:'asset/sam business pic.png' }];
+const TEAM_DATA = [{ name:'Samuel Arogundade', role:'Founder & Creative Lead', bio:'Engineer at heart, designer by soul. Building the future of the web.', initials:'SA', color:'#7c3aed', img:'asset/sam business pic.png', xUrl: 'https://x.com/SamuelArog24541' }];
+
+/* ============================================================
+   ADVERTISING LOGIC
+============================================================ */
+async function fetchAdvertisements() {
+  try {
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select('*, advertisers(*), categories(name)')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    ADVERTISEMENTS = data || [];
+    renderHomeFeaturedAds();
+    renderFeatured();
+    populateBusinessCategoryFilters();
+  } catch (err) {
+    console.error('Error fetching advertisements:', err);
+  }
+}
+
+function renderBusinessCard(ad) {
+  const biz = ad.advertisers || {};
+  const banner = ad.banner_url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80';
+  const categoryName = ad.categories?.name || biz.business_name || 'Promoted Business';
+  
+  const now = new Date();
+  const isExpired = ad.expiration_date && new Date(ad.expiration_date) < now;
+  const isPending = ad.status === 'pending';
+  const isInactive = isPending || isExpired;
+
+  if (isInactive) {
+    const statusLabel = isPending ? 'Awaiting Approval' : 'Ad Expired';
+    return `
+      <div class="business-card inactive reveal">
+        <div class="inactive-overlay"><span>${statusLabel}</span></div>
+        <img src="${banner}" class="business-banner blurred" alt="Restricted">
+        <div class="business-card-content" style="filter: blur(1px); opacity: 0.5;">
+          <div class="business-logo"><img src="asset/praxionhub1.png" alt="logo"></div>
+          <div class="business-category">Locked Content</div>
+          <h3 class="business-name">Business Restricted</h3>
+          <p class="business-description">This advertisement is currently inactive. Details are hidden until approval or renewal.</p>
+          <div class="business-actions-bottom">
+            <button class="btn-primary" disabled style="opacity: 0.5;">Access Restricted</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="business-card reveal">
+      <img src="${banner}" class="business-banner" alt="${ad.ad_title}" loading="lazy">
+      <div class="business-card-content">
+        <div class="business-logo"><img src="asset/praxionhub1.png" alt="logo"></div>
+        <div class="business-category">${categoryName}</div>
+        <h3 class="business-name">${ad.ad_title}</h3>
+        <p class="business-description">${ad.ad_description.substring(0, 100)}...</p>
+        <div class="business-actions-bottom">
+          <button class="btn-primary" onclick="openAdDetails('${ad.id}')">View Details</button>
+          ${biz.whatsapp_number ? `<a href="https://wa.me/${biz.whatsapp_number.replace(/\D/g,'')}" class="btn-secondary" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderHomeFeaturedAds() {
+  const grid = document.getElementById('home-featured-businesses');
+  if (!grid) return;
+  
+  const header = grid.closest('section')?.querySelector('.section-header');
+  const now = new Date();
+  
+  // Filter strictly for Approved and Active ads
+  const approvedAds = ADVERTISEMENTS.filter(ad => 
+    ad.status === 'approved' && (!ad.expiration_date || new Date(ad.expiration_date) > now)
+  );
+
+  // Calculate stats for pending/expired
+  const pendingCount = ADVERTISEMENTS.filter(ad => ad.status === 'pending').length;
+  const expiredCount = ADVERTISEMENTS.filter(ad => ad.expiration_date && new Date(ad.expiration_date) < now).length;
+
+  // Update header with stats if they exist
+  if (header) {
+    const existingBar = header.querySelector('.ad-status-bar');
+    if (existingBar) existingBar.remove();
+    
+    if (pendingCount > 0 || expiredCount > 0) {
+      const statsHtml = `
+        <div class="ad-status-bar reveal">
+          ${pendingCount > 0 ? `<span class="ad-stat-pill" style="cursor:pointer" onclick="showToast('${pendingCount} advertisement(s) are currently pending approval.', 'info', 'fa-solid fa-clock')">
+            <i class="fa-solid fa-clock"></i> ${pendingCount} Pending
+          </span>` : ''}
+          ${expiredCount > 0 ? `<span class="ad-stat-pill"><i class="fa-solid fa-calendar-xmark"></i> ${expiredCount} Expired Ads</span>` : ''}
+        </div>`;
+      header.insertAdjacentHTML('beforeend', statsHtml);
+    }
+  }
+
+  if (approvedAds.length > 0) {
+    grid.classList.add('business-slider');
+    grid.innerHTML = approvedAds.map(renderBusinessCard).join('');
+    
+    // Auto-swipe Logic (Every 6 seconds)
+    if (homeAdInterval) clearInterval(homeAdInterval);
+    if (approvedAds.length > 1) {
+      homeAdInterval = setInterval(() => {
+        const firstCard = grid.querySelector('.business-card');
+        if (!firstCard) return;
+        
+        const scrollAmount = firstCard.offsetWidth + 20; // card width + gap
+        const isAtEnd = grid.scrollLeft >= (grid.scrollWidth - grid.clientWidth - 10);
+        
+        grid.scrollTo({
+          left: isAtEnd ? 0 : grid.scrollLeft + scrollAmount,
+          behavior: 'smooth'
+        });
+      }, 6000);
+    }
+  } else {
+    grid.classList.remove('business-slider');
+    grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">No featured businesses at the moment.</p>';
+  }
+
+  observeReveal();
+}
+
+async function renderAdminDashboard() {
+  const table = document.getElementById('admin-ad-table');
+  const statsGrid = document.getElementById('admin-stats-grid');
+  if (!table) return;
+
+  const searchTerm = (document.getElementById('admin-search')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('admin-status-filter')?.value || 'all';
+
+  const filtered = ADVERTISEMENTS.filter(ad => {
+    const biz = ad.advertisers || {};
+    const matchesSearch = ad.ad_title.toLowerCase().includes(searchTerm) || 
+                          (biz.business_name || '').toLowerCase().includes(searchTerm) ||
+                          (biz.email || '').toLowerCase().includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || ad.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Render Stats
+  if (statsGrid) {
+    const totalRev = ADVERTISEMENTS.reduce((sum, ad) => sum + (Number(ad.amount_paid) || 0), 0);
+    const pendingCount = ADVERTISEMENTS.filter(ad => ad.status === 'pending').length;
+    const activeCount = ADVERTISEMENTS.filter(ad => ad.status === 'approved').length;
+    
+    statsGrid.innerHTML = `
+      <div class="admin-stat-card"><span>Total Revenue</span><strong>₦${totalRev.toLocaleString()}</strong></div>
+      <div class="admin-stat-card"><span>Active Ads</span><strong>${activeCount}</strong></div>
+      <div class="admin-stat-card"><span>Pending Review</span><strong>${pendingCount}</strong></div>
+    `;
+  }
+
+  // Render Table
+  let html = `
+    <div class="admin-row header">
+      <span>Business & Title</span>
+      <span>Package</span>
+      <span>Amount</span>
+      <span>Status</span>
+      <span>Actions</span>
+    </div>
+  `;
+
+  html += filtered.map(ad => {
+    const biz = ad.advertisers || {};
+    return `
+      <div class="admin-row">
+        <div>
+          <div style="font-weight:700">${biz.business_name || 'Unknown'}</div>
+          <div style="font-size:11px; color:var(--text-muted)">${ad.ad_title}</div>
+        </div>
+        <span>${ad.ad_package} (${ad.duration_days}d)</span>
+        <span>₦${(Number(ad.amount_paid) || 0).toLocaleString()}</span>
+        <span class="badge ${ad.status}">${ad.status.toUpperCase()}</span>
+        <div class="admin-actions">
+          ${ad.status === 'pending' ? `<button class="admin-action-btn approve" onclick="updateAdStatus('${ad.id}', 'approved')">Approve</button>` : ''}
+          ${ad.status !== 'rejected' ? `<button class="admin-action-btn reject" onclick="updateAdStatus('${ad.id}', 'rejected')">Reject</button>` : ''}
+          <button class="admin-action-btn delete" onclick="deleteAd('${ad.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  table.innerHTML = html || '<div style="padding:40px; text-align:center; color:var(--text-muted);">No advertisements to display.</div>';
+}
+
+async function updateAdStatus(id, status) {
+  try {
+    const { error } = await supabase.from('advertisements').update({ status }).eq('id', id);
+    if (error) throw error;
+    showToast(`Ad ${status} successfully`, 'success');
+    await fetchAdvertisements();
+    renderAdminDashboard();
+  } catch (err) { 
+    console.error('Update Status Error:', err); 
+    showToast(`Update failed: ${err.message}`, 'error'); 
+  }
+}
+
+async function deleteAd(id) {
+  if (!confirm('Are you sure you want to delete this advertisement?')) return;
+  try {
+    const { error } = await supabase.from('advertisements').delete().eq('id', id);
+    if (error) throw error;
+    showToast('Ad deleted', 'info');
+    await fetchAdvertisements();
+    renderAdminDashboard();
+  } catch (err) { console.error(err); showToast('Delete failed', 'error'); }
+}
+
+function renderBusinessDirectory() {
+  const grid = document.getElementById('business-directory-grid');
+  if (!grid) return;
+
+  const searchTerm = (document.getElementById('business-search')?.value || '').toLowerCase();
+  const catFilter = document.getElementById('business-category-filter')?.value || 'all';
+  const statusFilter = document.getElementById('business-status-filter')?.value || 'all';
+  const now = new Date();
+
+  const filtered = ADVERTISEMENTS.filter(ad => {
+    const biz = ad.advertisers || {};
+    const matchesSearch = ad.ad_title.toLowerCase().includes(searchTerm) || 
+                          (biz.business_name || '').toLowerCase().includes(searchTerm);
+    const matchesCat = catFilter === 'all' || ad.category_id === catFilter;
+    
+    let matchesStatus = true;
+    if (statusFilter === 'approved') matchesStatus = ad.status === 'approved';
+    else if (statusFilter === 'expired') matchesStatus = ad.expiration_date && new Date(ad.expiration_date) < now;
+    else if (statusFilter !== 'all') matchesStatus = ad.status === statusFilter;
+
+    return matchesSearch && matchesCat && matchesStatus;
+  });
+
+  grid.innerHTML = filtered.length 
+    ? filtered.map(renderBusinessCard).join('') 
+    : '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">No businesses found matching your criteria.</div>';
+  observeReveal();
+}
+
+async function populateBusinessCategoryFilters() {
+  const filter = document.getElementById('business-category-filter');
+  if (!filter) return;
+
+  try {
+    const { data: categories } = await supabase.from('categories').select('*');
+    if (categories) {
+      const options = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      filter.innerHTML = `<option value="all">All Categories</option>` + options;
+    }
+  } catch (err) {
+    console.error('Error loading categories:', err);
+  }
+}
+
+async function populateAdvertiseCategoryOptions() {
+  const select = document.getElementById('ad-category');
+  if (!select) return;
+  try {
+    const { data: categories } = await supabase.from('categories').select('*');
+    if (categories) {
+      const options = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      select.innerHTML = options;
+    }
+  } catch (err) {
+    console.error('Error loading ad categories:', err);
+  }
+}
+
+function updatePackageAmount() {
+  const durationEl = document.getElementById('ad-duration');
+  const pkgEl = document.getElementById('ad-package');
+  if (!durationEl || !pkgEl) return 1000;
+
+  const duration = durationEl.value;
+  const pkg = pkgEl.value;
+  
+  // User defined pricing
+  const pricing = { '1': 1000, '2': 2000, '7': 5000, '30': 12000 };
+  let amount = pricing[duration] || 0;
+
+  // Optional multipliers for packages
+  if (pkg === 'standard') amount *= 1.5;
+  if (pkg === 'premium') amount *= 2.5;
+
+  const formattedAmount = amount.toLocaleString();
+
+  // Update Advertise Page Summary
+  const summaryFields = {
+    'summary-amount': '₦' + formattedAmount,
+    'summary-package': pkg.charAt(0).toUpperCase() + pkg.slice(1),
+    'summary-duration': duration + (duration === '1' ? ' day' : ' days'),
+    'payment-modal-amount': formattedAmount,
+    'transfer-amt': formattedAmount
+  };
+
+  Object.entries(summaryFields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (el.tagName === 'SPAN' || el.tagName === 'STRONG') el.textContent = val;
+      else el.value = val;
+    }
+  });
+
+  return amount;
+}
+
+async function handleAdvertiseSubmit() {
+  const bizName = document.getElementById('ad-business-name').value.trim();
+  const email = document.getElementById('ad-email').value.trim();
+  const adTitle = document.getElementById('ad-title').value.trim();
+  const adDesc = document.getElementById('ad-description').value.trim();
+
+  if (!bizName || !email || !adTitle || !adDesc) { 
+    showToast('Please fill in all required business details', 'error'); 
+    return; 
+  }
+
+  const amount = updatePackageAmount();
+
+  const submitBtn = document.getElementById('ad-submit-btn');
+  if (!submitBtn) return;
+  submitBtn.classList.add('loading');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+
+  try {
+    const bannerFile = document.getElementById('ad-banner').files[0];
+    let bannerUrl = null;
+
+    if (bannerFile) {
+      const bannerPath = `banners/${Date.now()}-${bannerFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('advertisement-media')
+        .upload(bannerPath, bannerFile);
+
+      if (uploadError) throw uploadError;
+
+      bannerUrl = supabase.storage.from('advertisement-media').getPublicUrl(bannerPath).data.publicUrl;
+    }
+
+    // Store data to use after payment selection
+    pendingAdData = {
+      email, amount, bannerUrl,
+      bizName, owner: document.getElementById('ad-owner-name').value,
+      phone: document.getElementById('ad-phone').value,
+      wa: document.getElementById('ad-whatsapp').value,
+      web: document.getElementById('ad-website').value,
+      catId: document.getElementById('ad-category').value,
+      title: document.getElementById('ad-title').value,
+      description: document.getElementById('ad-description').value,
+      location: document.getElementById('ad-location').value,
+      package: document.getElementById('ad-package').value,
+      duration: parseInt(document.getElementById('ad-duration').value),
+      // Generate a unique reference before payment starts
+      reference: 'PH-' + Math.floor(Math.random() * 1000000000 + 1)
+    };
+
+    // IMPROVEMENT: You should ideally save the ad as 'unpaid' here 
+    // so you have a record if the user's browser crashes during payment.
+
+    // Instructional popup for the multi-step payment process
+    alert("Final Steps: \n1. Select your payment method in the next window.\n2. Complete the payment process.\n3. Click the button to know what next.\n4. Your ad will be automatically submitted once payment is confirmed!");
+
+    const modal = document.getElementById('payment-modal');
+    const amtSpan = document.getElementById('payment-modal-amount');
+    if (amtSpan) amtSpan.textContent = amount.toLocaleString();
+    if (modal) modal.classList.add('open');
+
+    submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Pay & Submit Advertisement';
+
+  } catch (err) {
+    console.error('Storage Error:', err);
+    showToast(`Image upload failed: ${err.message}. Please check your Supabase Storage settings.`, 'error');
+    submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
+    return; // Stop here if upload fails so user doesn't pay for an ad without a banner
+  }
+}
+
+function showPaymentMethods() {
+  const details = document.getElementById('manual-transfer-details');
+  const selectionDiv = document.getElementById('payment-methods-selection');
+  if (details) details.style.display = 'none';
+  if (selectionDiv) selectionDiv.style.display = 'block';
+}
+
+function closePaymentModal() {
+  document.getElementById('payment-modal')?.classList.remove('open');
+}
+
+async function initiateSelectedPayment(method) {
+  if (!pendingAdData) return;
+  closePaymentModal();
+
+  if (method === 'paystack') {
+    const handler = PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: pendingAdData.email,
+      amount: pendingAdData.amount * 100,
+      currency: 'NGN',
+      reference: pendingAdData.reference,
+      callback: async (response) => {
+        await finalizeAdvertisement(response.reference, pendingAdData.amount, pendingAdData.bannerUrl);
+      },
+      onClose: () => showToast('Payment cancelled', 'info')
+    });
+    handler.openIframe();
+  } else if (method === 'opay') {
+    const details = document.getElementById('manual-transfer-details');
+    const amtSpan = document.getElementById('transfer-amt');
+    const selectionDiv = document.getElementById('payment-methods-selection');
+    
+    if (amtSpan) amtSpan.textContent = pendingAdData.amount.toLocaleString();
+    if (details) details.style.display = 'block';
+    if (selectionDiv) selectionDiv.style.display = 'none';
+  }
+}
+
+async function confirmManualTransfer() {
+  if (!pendingAdData) return;
+  showToast('Submitting with manual payment...', 'info');
+  // Reset modal UI for next time
+  showPaymentMethods();
+  
+  closePaymentModal();
+  // Process as 'pending' with a custom OPay reference
+  await finalizeAdvertisement('OPAY-MANUAL-' + Date.now(), pendingAdData.amount, pendingAdData.bannerUrl);
+}
+
+async function finalizeAdvertisement(reference, amount, bannerUrl) {
+  const data = pendingAdData || {};
+  try {
+    const { data: advertiser, error: advErr } = await supabase.from('advertisers').upsert({
+      business_name: data.bizName, owner_name: data.owner, email: data.email,
+      phone_number: data.phone, whatsapp_number: data.wa, website_url: data.web, category_id: data.catId
+    }, { onConflict: 'email', ignoreDuplicates: false }) // ignoreDuplicates: false ensures update if exists
+    .select().single();
+    if (advErr) throw advErr;
+
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + data.duration);
+
+    const { error: adErr } = await supabase.from('advertisements').insert([{
+      advertiser_id: advertiser.id,
+      ad_title: data.title,
+      category_id: data.catId, // Add category_id here
+      ad_description: data.description,
+      location: data.location,
+      banner_url: bannerUrl,
+      ad_package: data.package,
+      duration_days: data.duration,
+      amount_paid: amount,
+      payment_reference: reference,
+      status: 'pending',
+      expiration_date: expiryDate.toISOString()
+    }]);
+    if (adErr) throw adErr;
+
+    await fetchAdvertisements();
+    showPage('home');
+    
+    // Celebration
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 20000 });
+    showToast('Ad submitted successfully!', 'success');
+    setTimeout(() => {
+      pendingAdData = null;
+      // Scroll to ads section to show the user their pending ad is in the list
+      document.getElementById('home-featured-businesses')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 800);
+  } catch (err) {
+    console.error('Finalize Advertisement Error:', err);
+    showToast(`Data save failed: ${err.message}`, 'error');
+  }
+}
+
+function openAdDetails(id) {
+  const ad = ADVERTISEMENTS.find(a => a.id === id);
+  if (!ad) return;
+  
+  const isExpired = ad.expiration_date && new Date(ad.expiration_date) < new Date();
+  if (ad.status !== 'approved' || isExpired) {
+    showToast('This advertisement is currently restricted.', 'info', 'fa-solid fa-lock');
+    return;
+  }
+  
+  // Store the current detail in a global variable and switch page
+  window.currentAdDetail = ad;
+  showPage('ad-details');
+  renderAdDetail(ad);
+}
 
 /* ============================================================
    PORTFOLIO LOGIC
@@ -70,18 +568,26 @@ function showToast(msg, type='success', icon='fa-solid fa-check') {
 
 function renderProductCard(p) {
   const badgeHtml = p.badge ? `<div class="product-badge ${p.badge==='Sale'?'sale':''}">${p.badge}</div>` : '';
-  const oldPriceHtml = p.oldPrice ? `<span class="product-price-old">$${p.oldPrice}</span>` : '';
-  return `<div class="product-card reveal">
+  const clickHandler = p.isAd ? `openAdDetails('${p.id}')` : `openProductModal(${p.id})`;
+  return `<div class="product-card reveal" data-id="${p.id}">
       <div class="product-img-wrap"><img src="${p.img}" alt="${p.name}" loading="lazy" />${badgeHtml}
-        <div class="product-overlay"><div class="product-quick-view" onclick="openProductModal(${p.id})">View Project</div></div>
+        <div class="product-overlay"><div class="product-quick-view" onclick="${clickHandler}">View ${p.isAd ? 'Ad' : 'Project'}</div></div>
       </div>
       <div class="product-info"><div class="product-category">${p.category.toUpperCase()}</div><div class="product-name" style="margin-top:8px">${p.name}</div>
-        <div class="product-bottom"><div><span class="product-price">Case Study Available</span></div><button class="add-to-cart-btn" onclick="openProductModal(${p.id})"><i class="fa-solid fa-arrow-right"></i></button></div>
+        <div class="product-bottom"><div><span class="product-price">${p.isAd ? 'Featured Business' : 'Case Study Available'}</span></div><button class="add-to-cart-btn" onclick="${clickHandler}"><i class="fa-solid fa-arrow-right"></i></button></div>
       </div>
     </div>`;
 }
 
-function renderFeatured() { const grid = document.getElementById('featured-grid'); if (!grid) return; grid.innerHTML = PRODUCTS.slice(0, 4).map(renderProductCard).join(''); observeReveal(); }
+function renderFeatured() { 
+  const grid = document.getElementById('featured-grid'); 
+  if (!grid) return; 
+  // Show strictly only professional portfolio projects in this section
+  const combined = PRODUCTS.slice(0, 8);
+  grid.innerHTML = combined.map(renderProductCard).join(''); 
+  observeReveal();
+}
+
 function renderShop() {
   const grid = document.getElementById('shop-grid');
   const count = document.getElementById('shop-results-count');
@@ -89,12 +595,11 @@ function renderShop() {
   const filtered = PRODUCTS.filter(p => { const catMatch = activeFilter === 'all' || p.category === activeFilter; const searchMatch = !search || p.name.toLowerCase().includes(search) || p.category.includes(search); return catMatch && searchMatch; });
   grid.innerHTML = filtered.length ? filtered.map(renderProductCard).join('') : `<div style="grid-column:1/-1;text-align:center;padding:80px 0;color:var(--text-muted)"><i class="fa-solid fa-magnifying-glass" style="font-size:40px;opacity:0.2;margin-bottom:16px;display:block"></i>No projects found.</div>`;
   count.innerHTML = `Showing <span>${filtered.length}</span> of <span>${PRODUCTS.length}</span> projects`;
-  observeReveal();
 }
 function filterProducts() { renderShop(); }
 function setFilter(btn, cat) { activeFilter = cat; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderShop(); }
 function renderServices() { const grid = document.getElementById('services-grid'); if (!grid) return; grid.innerHTML = SERVICES_DATA.map(s => `<div class="service-card reveal"><div class="service-icon"><i class="${s.icon}"></i></div><div class="service-title">${s.title}</div><div class="service-desc">${s.desc}</div></div>`).join(''); observeReveal(); }
-function renderTeam() { const grid = document.getElementById('team-grid'); if (!grid) return; grid.innerHTML = TEAM_DATA.map(m => `<div class="team-card reveal"><div class="team-avatar" style="${m.img ? '' : `background:linear-gradient(135deg,${m.color}aa,${m.color}44)`}">${m.img ? `<img src="${m.img}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover">` : m.initials}</div><div class="team-name">${m.name}</div><div class="team-role">${m.role}</div><div class="team-bio">${m.bio}</div><div class="team-social"><a href="#"><i class="fa-brands fa-x-twitter"></i></a><a href="#"><i class="fa-brands fa-linkedin-in"></i></a><a href="#"><i class="fa-brands fa-instagram"></i></a></div></div>`).join(''); observeReveal(); }
+function renderTeam() { const grid = document.getElementById('team-grid'); if (!grid) return; grid.innerHTML = TEAM_DATA.map(m => `<div class="team-card reveal"><div class="team-avatar" style="${m.img ? '' : `background:linear-gradient(135deg,${m.color}aa,${m.color}44)`}">${m.img ? `<img src="${m.img}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover">` : m.initials}</div><div class="team-name">${m.name}</div><div class="team-role">${m.role}</div><div class="team-bio">${m.bio}</div><div class="team-social"><a href="${m.xUrl || '#'}" target="_blank"><i class="fa-brands fa-x-twitter"></i></a><a href="#"><i class="fa-brands fa-linkedin-in"></i></a><a href="#"><i class="fa-brands fa-instagram"></i></a></div></div>`).join(''); observeReveal(); }
 function renderTestimonials() { const track = document.getElementById('testimonials-track'); if (!track) return; const all = [...TESTIMONIALS, ...TESTIMONIALS]; track.innerHTML = all.map(t => `<div class="testimonial-card"><div class="testimonial-stars">${'★'.repeat(5)}</div><div class="testimonial-text">"${t.text}"</div><div class="testimonial-author"><div class="testimonial-avatar">${t.initials}</div><div><div class="testimonial-name">${t.name}</div><div class="testimonial-handle">${t.handle}</div></div></div></div>`).join(''); }
 function renderBrands() { const track = document.getElementById('brand-track'); if (!track) return; const all = [...BRANDS, ...BRANDS]; track.innerHTML = all.map(b => `<div class="brand-item">${b}</div>`).join(''); }
 
@@ -113,16 +618,50 @@ function showPage(name, updateHash = true) {
 
   // Page-specific initialization logic
   const pageInitializers = {
-    home: () => { renderFeatured(); renderTestimonials(); renderBrands(); },
+    home: () => { renderFeatured(); renderTestimonials(); renderBrands(); renderHomeFeaturedAds(); },
     portfolio: () => renderShop(),
-    services: () => renderServices(),
+    'featured-businesses': () => { renderBusinessDirectory(); populateBusinessCategoryFilters(); },
+    advertise: () => { populateAdvertiseCategoryOptions(); updatePackageAmount(); },
+    admin: () => renderAdminDashboard(),
+    'ad-details': () => { if (window.currentAdDetail) renderAdDetail(window.currentAdDetail); }, // Render ad details if navigating directly
     request: () => { initVoice(); initFileUpload(); },
     about: () => { renderTeam(); setTimeout(animateSkills, 500); }
   };
 
   if (pageInitializers[name]) {
-    pageInitializers[name]();
+    try {
+      pageInitializers[name]();
+    } catch (e) {
+      console.error(`Error initializing page ${name}:`, e);
+    }
   }
+  
+  observeReveal();
+}
+
+function renderAdDetail(ad) {
+  const biz = ad.advertisers || {};
+  const banner = ad.banner_url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80';
+  
+  const statusEl = document.getElementById('detail-status');
+  const titleEl = document.getElementById('detail-business-name');
+  const metaEl = document.getElementById('detail-business-category');
+  const bannerEl = document.getElementById('detail-banner');
+  const descEl = document.getElementById('detail-description');
+  const webBtn = document.getElementById('detail-website');
+  const waBtn = document.getElementById('detail-whatsapp');
+
+  if (titleEl) titleEl.textContent = ad.ad_title;
+  if (metaEl) metaEl.textContent = `${biz.business_name || 'Business'} • ${ad.location || 'Global'}`;
+  if (bannerEl) bannerEl.style.backgroundImage = `url(${banner})`;
+  if (descEl) descEl.textContent = ad.ad_description;
+  if (statusEl) {
+    statusEl.textContent = ad.status.toUpperCase();
+    statusEl.className = `badge ${ad.status}`;
+  }
+  
+  if (webBtn) biz.website_url ? (webBtn.href = biz.website_url, webBtn.style.display = 'inline-flex') : webBtn.style.display = 'none';
+  if (waBtn) biz.whatsapp_number ? (waBtn.href = `https://wa.me/${biz.whatsapp_number.replace(/\D/g,'')}`, waBtn.style.display = 'inline-flex') : waBtn.style.display = 'none';
   
   observeReveal();
 }
@@ -245,10 +784,10 @@ async function handleProjectRequest() {
       .from('client_requests')
       .insert([{ 
         project_description: desc,
-        subject: 'Project Request: ' + desc.substring(0, 20) + '...',
-        first_name: 'Quick',
-        last_name: 'Request',
-        email: 'request@praxionhub.local', 
+        subject: 'Project Request: ' + (document.getElementById('request-name').value || 'Quick Request') + ' - ' + desc.substring(0, 20) + '...',
+        first_name: document.getElementById('request-name').value || null,
+        last_name: '', // Assuming no separate last name field for quick request
+        email: document.getElementById('request-email').value || null, 
         company: 'N/A',
         phone: 'N/A',
         voice_note_url: uploadedUrls.length > 0 ? uploadedUrls.join(', ') : null
@@ -284,8 +823,8 @@ async function handleProjectRequest() {
     showToast('Project request sent to PraxionHub!', 'success', 'fa-solid fa-paper-plane');
     
     // Note: If this still fails, ensure your 'client_requests' table 
-    // allows NULL values for 'first_name' and 'email', as this form doesn't collect them.
-    document.getElementById('request-description').value = '';
+    // allows NULL values for 'first_name' and 'email', as this form doesn't collect them. (Corrected below)
+    ['request-name', 'request-email', 'request-description'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('file-preview-container').innerHTML = '';
     selectedFiles = [];
   } catch (err) {
@@ -371,7 +910,7 @@ function openProductModal(id) {
   if (!p) return;
 
   const content = document.getElementById('product-detail-content');
-  content.innerHTML = `
+  content.innerHTML = ` 
     <div class="product-detail-img"><img src="${p.img}" alt="${p.name}" /></div>
     <div class="product-detail-info">
       <div class="product-category">${p.category.toUpperCase()}</div>
@@ -441,6 +980,47 @@ function typeWriter() {
   setTimeout(typeWriter, isDeleting ? 50 : 150);
 }
 
+async function loginAsAdmin() {
+  // SECURE IMPROVEMENT: Use Supabase Auth instead of LocalStorage
+  // This is a placeholder for the actual implementation
+  const password = prompt("Enter Admin Access Code:");
+  if (password === "0000") { // Replace with real Auth logic
+    localStorage.setItem('isAdmin', 'true');
+    showPage('admin');
+    showToast('Logged in as Admin', 'success');
+  } else {
+    showToast('Unauthorized Access', 'error');
+  }
+}
+
+function checkAdminAuth() {
+  return localStorage.getItem('isAdmin') === 'true';
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Account number copied!', 'info', 'fa-solid fa-copy');
+  }).catch(err => {
+    console.error('Could not copy text: ', err);
+  });
+}
+
+function updateConnectionStatus() {
+  const statusBtn = document.getElementById('connection-status');
+  const statusText = document.getElementById('connection-text');
+  if (!statusBtn || !statusText) return;
+
+  if (navigator.onLine) {
+    statusBtn.classList.remove('offline');
+    statusBtn.classList.add('online');
+    statusText.textContent = 'Online';
+  } else {
+    statusBtn.classList.remove('online');
+    statusBtn.classList.add('offline');
+    statusText.textContent = 'Offline';
+  }
+}
+
 function toggleTheme() {
   const html = document.documentElement;
   const isDark = html.getAttribute('data-theme') === 'dark';
@@ -503,6 +1083,8 @@ async function handleContact() {
   }
 }
 
+function toggleFAQ(el) { const item = el.closest('.faq-item'); if (item) item.classList.toggle('open'); }
+
 function toggleMobileNav() { const nav = document.getElementById('mobile-nav'); const btn = document.getElementById('hamburger'); nav.classList.toggle('open'); btn.classList.toggle('open'); }
 
 // --- Cursor Logic ---
@@ -515,13 +1097,16 @@ document.addEventListener('mousemove', e => {
   if(dot) { dot.style.left = mx+'px'; dot.style.top = my+'px'; }
 });
 
-function animRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); }
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+
+function animRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; if(ring) { ring.style.left = rx+'px'; ring.style.top = ry+'px'; } requestAnimationFrame(animRing); }
 if (ring) animRing();
 
-document.addEventListener('mousedown', () => { dot.style.transform = 'translate(-50%,-50%) scale(0.6)'; ring.style.transform = 'translate(-50%,-50%) scale(0.8)'; });
-document.addEventListener('mouseup', () => { dot.style.transform = 'translate(-50%,-50%) scale(1)'; ring.style.transform = 'translate(-50%,-50%) scale(1)'; });
-document.addEventListener('mouseover', e => { if (e.target.closest('button, a, input, textarea, [onclick]')) { dot.style.width = '12px'; dot.style.height = '12px'; ring.style.width = '50px'; ring.style.height = '50px'; ring.style.borderColor = 'rgba(232,255,71,0.8)'; } });
-document.addEventListener('mouseout', e => { if (e.target.closest('button, a, input, textarea, [onclick]')) { dot.style.width = '8px'; dot.style.height = '8px'; ring.style.width = '36px'; ring.style.height = '36px'; ring.style.borderColor = 'rgba(232,255,71,0.5)'; } });
+document.addEventListener('mousedown', () => { if(dot) dot.style.transform = 'translate(-50%,-50%) scale(0.6)'; if(ring) ring.style.transform = 'translate(-50%,-50%) scale(0.8)'; });
+document.addEventListener('mouseup', () => { if(dot) dot.style.transform = 'translate(-50%,-50%) scale(1)'; if(ring) ring.style.transform = 'translate(-50%,-50%) scale(1)'; });
+document.addEventListener('mouseover', e => { if (dot && ring && e.target.closest('button, a, input, textarea, [onclick]')) { dot.style.width = '12px'; dot.style.height = '12px'; ring.style.width = '50px'; ring.style.height = '50px'; ring.style.borderColor = 'rgba(232,255,71,0.8)'; } });
+document.addEventListener('mouseout', e => { if (dot && ring && e.target.closest('button, a, input, textarea, [onclick]')) { dot.style.width = '8px'; dot.style.height = '8px'; ring.style.width = '36px'; ring.style.height = '36px'; ring.style.borderColor = 'rgba(232,255,71,0.5)'; } });
 
 
 window.addEventListener('hashchange', () => {
@@ -538,7 +1123,7 @@ window.addEventListener('load', () => {
     themeIcon.className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
   }
 
-  setTimeout(() => { 
+  setTimeout(async () => { // Made this async to await fetchAdvertisements
     const loader = document.getElementById('loader');
     if (loader) {
       loader.classList.add('done'); 
@@ -546,29 +1131,34 @@ window.addEventListener('load', () => {
     // Safe-check: only run if the page is currently 'home' or empty hash
     const initialHash = window.location.hash.replace('#', '') || 'home';
     showPage(initialHash, false);
-    typeWriter();
-  }, 2100); 
+    typeWriter(); // Start typewriter after initial page load
+    updateConnectionStatus();
+    await fetchAdvertisements(); // Ensure ads are fetched before rendering
+  }, 800); 
 });
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeProductModal(); } });
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyC3DIt_p9FL4Rk6Y5qUa3cz2FSGqFxvJvM",
-  authDomain: "pixelpulse-de.firebaseapp.com",
-  projectId: "pixelpulse-de",
-  storageBucket: "pixelpulse-de.firebasestorage.app",
-  messagingSenderId: "1042215042839",
-  appId: "1:1042215042839:web:888a6010c8ec87c375c152",
-  measurementId: "G-BPYCNS3K4L"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Analytics only if supported (prevents crashes if blocked by ad-blockers)
-isSupported().then(yes => yes ? getAnalytics(app) : null);
+// Load Firebase dynamically to avoid blocking the main execution thread
+async function initFirebase() {
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+    const { getAnalytics, isSupported } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js");
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3DIt_p9FL4Rk6Y5qUa3cz2FSGqFxvJvM",
+      authDomain: "pixelpulse-de.firebaseapp.com",
+      projectId: "pixelpulse-de",
+      storageBucket: "pixelpulse-de.firebasestorage.app",
+      messagingSenderId: "1042215042839",
+      appId: "1:1042215042839:web:888a6010c8ec87c375c152",
+      measurementId: "G-BPYCNS3K4L"
+    };
+    const app = initializeApp(firebaseConfig);
+    const yes = await isSupported();
+    if (yes) getAnalytics(app);
+  } catch (e) { console.warn("Firebase Analytics could not be loaded."); }
+}
+initFirebase();
 
 /* ============================================================
    EXPOSE FUNCTIONS TO GLOBAL SCOPE
@@ -578,16 +1168,32 @@ const globalFunctions = {
   showPage,
   toggleTheme,
   toggleMobileNav,
+  toggleFAQ,
+  renderBusinessDirectory,
+  renderAdminDashboard,
+  updateAdStatus,
+  deleteAd,
+  openAdDetails,
+  handleAdvertiseSubmit,
+  updatePackageAmount,
+  fetchAdvertisements,
+  renderHomeFeaturedAds,
+  renderAdDetail,
   filterProducts,
   setFilter,
   openProductModal,
   closeProductModal,
+  showPaymentMethods,
+  initiateSelectedPayment,
+  confirmManualTransfer,
   handleProductOverlayClick,
   handleProjectRequest,
   handleContact,
   getRequests,
   updateRequest,
   deleteRequest,
-  removeFile
+  removeFile,
+  copyToClipboard,
+  loginAsAdmin
 };
 Object.entries(globalFunctions).forEach(([name, fn]) => window[name] = fn);
