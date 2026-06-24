@@ -477,6 +477,7 @@ background: var(--bg-glass); border: 1px solid var(--bg-glass-border); }
 .hero-stats {
   position: absolute; right: clamp(20px,6vw,100px); bottom: clamp(40px,8vh,100px);
   display: flex; gap: 40px; animation: heroSlideIn 0.7s 0.9s both;
+  color: var(--text); 
 }
 .stat-item { text-align: center; }
 .stat-num {
@@ -486,7 +487,7 @@ background: var(--bg-glass); border: 1px solid var(--bg-glass-border); }
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.stat-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+.stat-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); margin-top: 2px; }
  
 /* ============================================================
    SECTION COMMONS
