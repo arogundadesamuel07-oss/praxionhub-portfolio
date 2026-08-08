@@ -55,6 +55,155 @@ const SERVICES_DATA = [
 ];
 
 const TEAM_DATA = [{ name:'Samuel Arogundade', role:'Founder & Creative Lead', bio:'Engineer at heart, designer by soul. Building the future of the web.', initials:'SA', color:'#7c3aed', img:'asset/sam business pic.png', xUrl: 'https://x.com/SamuelArog24541' }];
+const FAVORITES = new Set();
+
+function loadFavorites() {
+  const stored = localStorage.getItem('praxionhubFavorites');
+  if (stored) {
+    try { JSON.parse(stored).forEach(id => FAVORITES.add(id)); } catch { /* ignore */ }
+  }
+  updateFavoriteCount();
+}
+
+function saveFavorites() {
+  localStorage.setItem('praxionhubFavorites', JSON.stringify([...FAVORITES]));
+}
+
+function updateFavoriteCount() {
+  const countEl = document.getElementById('favorite-count');
+  if (!countEl) return;
+  countEl.textContent = FAVORITES.size;
+  countEl.classList.toggle('visible', FAVORITES.size > 0);
+}
+
+function getFavoriteItem(id) {
+  if (id.startsWith('project-')) {
+    const product = PRODUCTS.find(p => `project-${p.id}` === id);
+    if (!product) return null;
+    return { id, type:'Project', name: product.name, subtitle: product.category, img: product.img, url: product.url };
+  }
+  if (id.startsWith('business-')) {
+    const ad = ADVERTISEMENTS.find(a => `business-${a.id}` === id);
+    if (!ad) return null;
+    return { id, type:'Business', name: ad.ad_title, subtitle: ad.advertisers?.business_name || 'Featured Business', img: ad.banner_url, url: ad.advertisers?.website_url || '' };
+  }
+  return null;
+}
+
+function toggleFavorite(id) {
+  if (FAVORITES.has(id)) {
+    FAVORITES.delete(id);
+    showToast('Removed from saved items', 'info', 'fa-solid fa-heart-broken');
+  } else {
+    FAVORITES.add(id);
+    showToast('Saved to favorites', 'success', 'fa-solid fa-heart');
+  }
+  saveFavorites();
+  updateFavoriteCount();
+  refreshFavoriteButtons();
+  renderFavoritesPanel();
+}
+
+function refreshFavoriteButtons() {
+  document.querySelectorAll('[data-favorite-id]').forEach(el => {
+    const id = el.dataset.favoriteId;
+    el.classList.toggle('active', FAVORITES.has(id));
+  });
+}
+
+function getFeaturedBusinessTitles() {
+  const now = new Date();
+  return ADVERTISEMENTS
+    .filter(ad => ad.status === 'approved' && (!ad.expiration_date || new Date(ad.expiration_date) > now))
+    .map(ad => ad.ad_title || ad.advertisers?.business_name || 'Featured Business');
+}
+
+function showNewUserPopupIfNeeded() {
+  // Show once per session by default, but still update counts every page load
+  if (sessionStorage.getItem('praxionhubNewUserSessionSeen')) return;
+  const businessTitles = getFeaturedBusinessTitles();
+  if (!businessTitles.length) return;
+  const countEl = document.getElementById('new-user-business-count');
+  const listEl = document.getElementById('new-user-business-list');
+  const titleEl = document.getElementById('new-user-title');
+  if (countEl) countEl.textContent = businessTitles.length;
+  if (titleEl) titleEl.textContent = `Join ${businessTitles.length} brands showcasing their products`;
+  if (listEl) {
+    const visibleTitles = businessTitles.slice(0, 5);
+    listEl.innerHTML = visibleTitles.map(name => `<li>${name}</li>`).join('');
+    if (businessTitles.length > 5) {
+      listEl.innerHTML += `<li>and ${businessTitles.length - 5} more brands...</li>`;
+    }
+  }
+
+  // Add a featured ad preview (first approved ad)
+  const featuredContainer = document.getElementById('new-user-featured');
+  if (featuredContainer) {
+    const now = new Date();
+    const approvedAds = ADVERTISEMENTS.filter(ad => ad.status === 'approved' && (!ad.expiration_date || new Date(ad.expiration_date) > now));
+    const first = approvedAds[0];
+    if (first) {
+      const img = first.banner_url || 'asset/praxionhub1.png';
+      const title = first.ad_title || (first.advertisers && first.advertisers.business_name) || 'Featured Business';
+      const desc = (first.ad_description || '').substring(0, 80) + (first.ad_description && first.ad_description.length > 80 ? '…' : '');
+      const url = first.advertisers?.website_url || '#';
+      featuredContainer.innerHTML = `
+        <div style="display:flex;gap:10px;align-items:center">
+          <img src="${img}" alt="${title}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;" />
+          <div style="flex:1">
+            <div style="font-weight:700">${title}</div>
+            <div style="font-size:13px;color:var(--text-muted);">${desc}</div>
+            <div style="margin-top:6px"><button class="btn-secondary" onclick="window.open('${url}','_blank')">Visit</button></div>
+          </div>
+        </div>`;
+    } else {
+      featuredContainer.innerHTML = '';
+    }
+  }
+
+  document.getElementById('new-user-popup')?.classList.add('open');
+  sessionStorage.setItem('praxionhubNewUserSessionSeen', 'true');
+}
+
+function closeNewUserPopup() {
+  document.getElementById('new-user-popup')?.classList.remove('open');
+}
+
+function openFavoritesPanel() {
+  renderFavoritesPanel();
+  document.getElementById('favorites-panel')?.classList.add('open');
+}
+
+function closeFavoritesPanel(event) {
+  if (event && event.target && event.target.id !== 'favorites-panel' && !event.target.closest('.favorites-panel') && event.target.closest('.favorite-item-remove') == null) return;
+  document.getElementById('favorites-panel')?.classList.remove('open');
+}
+
+function renderFavoritesPanel() {
+  const list = document.getElementById('favorites-list');
+  if (!list) return;
+  const items = [...FAVORITES].map(getFavoriteItem).filter(Boolean);
+  const empty = document.querySelector('.favorites-panel-empty');
+
+  if (items.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+  list.innerHTML = items.map(item => `
+    <div class="favorite-item">
+      <div class="favorite-item-img"><img src="${item.img || 'asset/praxionhub1.png'}" alt="${item.name}" /></div>
+      <div class="favorite-item-details">
+        <div class="favorite-item-type">${item.type}</div>
+        <div class="favorite-item-name">${item.name}</div>
+        <div style="font-size:13px;color:var(--text-muted);">${item.subtitle}</div>
+      </div>
+      <button class="favorite-item-remove" onclick="toggleFavorite('${item.id}')" aria-label="Remove saved item"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  `).join('');
+}
 
 /* ============================================================
    ADVERTISING LOGIC
@@ -105,9 +254,12 @@ function renderBusinessCard(ad) {
       </div>`;
   }
 
+  const favId = `business-${ad.id}`;
+  const favActive = FAVORITES.has(favId) ? 'active' : '';
   return `
     <div class="business-card reveal">
       <img src="${banner}" class="business-banner" alt="${ad.ad_title}" loading="lazy">
+      <button class="favorite-btn ${favActive}" data-favorite-id="${favId}" onclick="toggleFavorite('${favId}')" title="Save business"><i class="fa-solid fa-heart"></i></button>
       <div class="business-card-content">
         <div class="business-logo"><img src="asset/praxionhub1.png" alt="logo"></div>
         <div class="business-category">${categoryName}</div>
@@ -180,6 +332,52 @@ function renderHomeFeaturedAds() {
   }
 
   observeReveal();
+}
+
+// Show a small live popup for a given ad
+function openLiveAdPopup(ad) {
+  try {
+    const imgEl = document.getElementById('live-ad-img');
+    const titleEl = document.getElementById('live-ad-title');
+    const descEl = document.getElementById('live-ad-desc');
+    const popup = document.getElementById('live-ad-popup');
+    if (imgEl) imgEl.src = ad.banner_url || 'asset/praxionhub1.png';
+    if (titleEl) titleEl.textContent = ad.ad_title || (ad.advertisers && ad.advertisers.business_name) || 'New Advertisement';
+    if (descEl) descEl.textContent = (ad.ad_description || '').substring(0, 120);
+    window.liveAdUrl = ad.advertisers?.website_url || '#';
+    if (popup) {
+      popup.style.display = 'block';
+      setTimeout(() => { try { popup.style.display = 'none'; } catch(e){} }, 8000);
+    }
+  } catch (e) { console.warn('openLiveAdPopup error', e); }
+}
+
+// Subscribe to Supabase realtime changes for advertisements and show notifications
+function subscribeToAdChanges() {
+  try {
+    if (!supabase || typeof supabase.channel !== 'function') return;
+    // Avoid creating multiple identical channels
+    if (window._adsRealtimeSubscribed) return; window._adsRealtimeSubscribed = true;
+
+    const ch = supabase.channel('public:advertisements')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'advertisements' }, payload => {
+        const newAd = payload.new;
+        if (!newAd) return;
+        // Keep local cache fresh
+        ADVERTISEMENTS.unshift(newAd);
+        renderHomeFeaturedAds(); renderBusinessDirectory(); renderFeatured();
+        const approvedCount = ADVERTISEMENTS.filter(ad => ad.status === 'approved').length;
+        showToast(`${approvedCount} advertisers live — ${newAd.ad_title}`, 'info', 'fa-solid fa-bell');
+        openLiveAdPopup(newAd);
+      })
+      .subscribe();
+
+    // Also listen for updates to status so we can refresh counts
+    supabase.channel('public:advertisements').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'advertisements' }, payload => {
+      // Refresh full data from DB to stay in sync
+      fetchAdvertisements();
+    }).subscribe();
+  } catch (e) { console.warn('Realtime subscribe failed', e); }
 }
 
 async function renderAdminDashboard() {
@@ -569,8 +767,11 @@ function showToast(msg, type='success', icon='fa-solid fa-check') {
 function renderProductCard(p) {
   const badgeHtml = p.badge ? `<div class="product-badge ${p.badge==='Sale'?'sale':''}">${p.badge}</div>` : '';
   const clickHandler = p.isAd ? `openAdDetails('${p.id}')` : `openProductModal(${p.id})`;
+  const favId = `project-${p.id}`;
+  const favActive = FAVORITES.has(favId) ? 'active' : '';
   return `<div class="product-card reveal" data-id="${p.id}">
       <div class="product-img-wrap"><img src="${p.img}" alt="${p.name}" loading="lazy" />${badgeHtml}
+        <button class="favorite-btn ${favActive}" data-favorite-id="${favId}" onclick="toggleFavorite('${favId}')" title="Save project"><i class="fa-solid fa-heart"></i></button>
         <div class="product-overlay"><div class="product-quick-view" onclick="${clickHandler}">View ${p.isAd ? 'Ad' : 'Project'}</div></div>
       </div>
       <div class="product-info"><div class="product-category">${p.category.toUpperCase()}</div><div class="product-name" style="margin-top:8px">${p.name}</div>
@@ -1124,6 +1325,7 @@ window.addEventListener('load', () => {
   }
 
   setTimeout(async () => { // Made this async to await fetchAdvertisements
+    loadFavorites();
     const loader = document.getElementById('loader');
     if (loader) {
       loader.classList.add('done'); 
@@ -1134,6 +1336,9 @@ window.addEventListener('load', () => {
     typeWriter(); // Start typewriter after initial page load
     updateConnectionStatus();
     await fetchAdvertisements(); // Ensure ads are fetched before rendering
+    subscribeToAdChanges(); // Listen for live ad updates and show popups
+    refreshFavoriteButtons();
+    showNewUserPopupIfNeeded();
   }, 800); 
 });
 
@@ -1194,6 +1399,11 @@ const globalFunctions = {
   deleteRequest,
   removeFile,
   copyToClipboard,
-  loginAsAdmin
+  loginAsAdmin,
+  openFavoritesPanel,
+  closeFavoritesPanel,
+  toggleFavorite,
+  refreshFavoriteButtons,
+  renderFavoritesPanel
 };
 Object.entries(globalFunctions).forEach(([name, fn]) => window[name] = fn);

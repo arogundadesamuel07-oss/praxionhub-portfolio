@@ -61,6 +61,49 @@
      TOAST CONTAINER
 ============================================================ -->
 <div id="toast-container"></div>
+
+<!-- ============================================================
+     NEW USER WELCOME POPUP
+============================================================ -->
+<div class="modal-overlay new-user-popup" id="new-user-popup">
+  <div class="modal-box new-user-box">
+    <button class="modal-close" onclick="closeNewUserPopup()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="new-user-content">
+      <span class="section-eyebrow">Welcome to PraxionHub</span>
+      <h2 class="new-user-title" id="new-user-title">Business showcase live now</h2>
+      <p class="new-user-copy">Join a growing community of entrepreneurs already promoting their products on PraxionHub.</p>
+      <div class="new-user-stats">
+        <div><strong id="new-user-business-count">0</strong><span>Featured businesses</span></div>
+        <div><strong>Contact:</strong><span>+234 704 300 5358</span></div>
+      </div>
+      <div class="new-user-list-wrap">
+        <strong>Current showcases</strong>
+        <ul id="new-user-business-list" class="new-user-business-list"></ul>
+          <div id="new-user-featured" class="new-user-featured" style="margin-top:12px"></div>
+      </div>
+      <div class="new-user-actions">
+        <button class="btn-primary" onclick="showPage('advertise'); closeNewUserPopup()">Showcase Your Product</button>
+        <button class="btn-secondary" onclick="closeNewUserPopup()">Maybe later</button>
+      </div>
+    </div>
+  </div>
+
+      <!-- LIVE AD NOTIFICATION POPUP -->
+      <div class="modal-overlay new-user-popup" id="live-ad-popup" style="display:none">
+        <div class="modal-box new-user-box" style="max-width:420px">
+          <button class="modal-close" onclick="document.getElementById('live-ad-popup').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          <div style="display:flex;gap:12px;align-items:center">
+            <img id="live-ad-img" src="asset/praxionhub1.png" alt="ad" style="width:84px;height:84px;object-fit:cover;border-radius:8px;"/>
+            <div>
+              <div style="font-size:13px;color:var(--text-muted);">New Advertisement</div>
+              <div id="live-ad-title" style="font-weight:700;margin-top:6px">Title</div>
+              <div id="live-ad-desc" style="font-size:13px;color:var(--text-muted);margin-top:6px">Short description</div>
+              <div style="margin-top:10px"><button class="btn-primary" id="live-ad-visit-btn" onclick="(function(){const url=window.liveAdUrl||'#'; window.open(url,'_blank');document.getElementById('live-ad-popup').style.display='none';})()">View</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
  
 <!-- ============================================================
      BACK TO TOP
@@ -94,6 +137,10 @@
       <button id="theme-toggle" aria-label="Toggle theme" title="Toggle theme" onclick="toggleTheme()">
         <i class="fa-solid fa-moon"></i>
       </button>
+      <button id="favorite-toggle" class="nav-icon-btn" aria-label="Saved projects" title="Saved projects" onclick="openFavoritesPanel()">
+        <i class="fa-solid fa-heart"></i>
+        <span id="favorite-count" class="cart-count">0</span>
+      </button>
       <button id="connection-status" class="nav-status" type="button" aria-label="Network status" title="Network status">
         <i class="fa-solid fa-wifi"></i>
         <span id="connection-text">Online</span>
@@ -114,6 +161,21 @@
   <a class="nav-link" data-page="contact" onclick="showPage('contact');toggleMobileNav()">Contact</a>
 </div>
  
+<!-- ============================================================
+     FAVORITES PANEL
+============================================================ -->
+<div class="favorites-panel-overlay" id="favorites-panel" onclick="closeFavoritesPanel(event)">
+  <div class="favorites-panel" role="dialog" aria-modal="true" aria-labelledby="favorites-title">
+    <button class="modal-close" onclick="closeFavoritesPanel(event)"><i class="fa-solid fa-xmark"></i></button>
+    <div class="favorites-panel-content">
+      <h2 id="favorites-title">Saved Favorites</h2>
+      <p class="favorites-panel-copy">This is your instant access list for saved projects and promoted businesses.</p>
+      <div id="favorites-list" class="favorites-list"></div>
+      <div class="favorites-panel-empty">No saved items yet. Use the heart icon on any project or business to save it here.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ============================================================
      PRODUCT DETAIL MODAL (Quick View)
 ============================================================ -->
@@ -247,7 +309,8 @@
     </div>
   </section>
  
-  <!-- Featured Products -->
+  <!--
+  <!-- Featured Products
   <section class="section">
     <div class="section-header reveal">
       <span class="section-eyebrow">Showcase</span>
@@ -261,8 +324,10 @@
       </button>
     </div>
   </section>
-
-  <!-- Featured Businesses -->
+  -->
+  
+<!--
+  <!-- Featured Businesses 
   <section class="section">
     <div class="section-header reveal">
       <span class="section-eyebrow">Advertisers</span>
@@ -276,6 +341,8 @@
       </button>
     </div>
   </section>
+-->
+  
  
   <!-- Brand Trust -->
   <div class="brand-strip">
