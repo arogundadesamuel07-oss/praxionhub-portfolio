@@ -481,7 +481,7 @@ function renderBusinessDirectory() {
     const biz = ad.advertisers || {};
     const matchesSearch = ad.ad_title.toLowerCase().includes(searchTerm) || 
                           (biz.business_name || '').toLowerCase().includes(searchTerm);
-    const matchesCat = catFilter === 'all' || ad.category_id === catFilter;
+    const matchesCat = catFilter === 'all' || String(ad.category_id) === String(catFilter);
     
     let matchesStatus = true;
     if (statusFilter === 'approved') matchesStatus = ad.status === 'approved';
@@ -584,7 +584,8 @@ async function handleAdvertiseSubmit() {
   submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
 
   try {
-    const bannerFile = document.getElementById('ad-banner').files[0];
+    const bannerInput = document.getElementById('ad-banner');
+    const bannerFile = bannerInput?.files?.[0];
     let bannerUrl = null;
 
     if (bannerFile) {
@@ -733,6 +734,37 @@ async function finalizeAdvertisement(reference, amount, bannerUrl) {
     console.error('Finalize Advertisement Error:', err);
     showToast(`Data save failed: ${err.message}`, 'error');
   }
+}
+
+function handleAdBannerPreview(event) {
+  const input = event.target;
+  const previewContainer = document.getElementById('ad-banner-preview');
+  if (!previewContainer) return;
+  previewContainer.innerHTML = '';
+
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    previewContainer.innerHTML = `
+      <div class="ad-banner-preview-card">
+        <img src="${reader.result}" alt="Banner preview" />
+        <div class="preview-actions">
+          <button type="button" class="preview-remove" onclick="removeAdBanner()" title="Remove banner image"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+    `;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeAdBanner() {
+  const input = document.getElementById('ad-banner');
+  const previewContainer = document.getElementById('ad-banner-preview');
+  if (!input) return;
+  input.value = '';
+  if (previewContainer) previewContainer.innerHTML = '';
 }
 
 function openAdDetails(id) {

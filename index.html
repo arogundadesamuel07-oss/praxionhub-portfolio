@@ -9,7 +9,7 @@
 <meta property="og:title" content="PraxionHub | Premium Web & App Development">
 <meta property="og:description" content="Transforming ideas into high-performance digital products by Samuel Arogundade.">
 <meta property="og:image" content="asset/praxionhub1.png">
-<meta property="og:url" content="https://praxionhub.com">
+<meta property="og:url" content="https://praxionhub.com.ng">
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="icon" type="image/png" href="asset/praxionhub1.png" />
@@ -52,7 +52,7 @@
      LOADER
 ============================================================ -->
 <div id="loader">
-  <div class="loader-logo"><img src="asset/praxionhub1.png" alt="PraxionHub Logo"></div>
+  <div class="loader-logo"><img src="asset/praxxion.png" alt="PraxionHub Logo"></div>
   <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
   <div class="loader-text">Initializing Praxion Hub...</div>
 </div>
@@ -121,7 +121,7 @@
      NAVBAR
 ============================================================ -->
 <nav id="navbar">
-  <div class="nav-logo" onclick="showPage('home')" style="cursor:none"><img class="load-nav" src="asset/praxionhub1.png" alt="PraxionHub Logo" title="PraxionHub Logo"></div>
+  <div class="nav-logo" onclick="showPage('home')" style="cursor:none"><img class="load-nav" src="asset/praxxion.png" alt="PraxionHub Logo" title="PraxionHub Logo"></div>
  
   <ul class="nav-links">
     <li><a class="nav-link active" data-page="home" onclick="showPage('home')">Home</a></li>
@@ -280,7 +280,7 @@
  
     <div class="hero-stats">
       <div class="stat-item">
-        <div class="stat-num">15+</div>
+        <div class="stat-num">12+</div>
         <div class="stat-label">Projects Delivered</div>
       </div>
       <div class="stat-item">
@@ -289,7 +289,7 @@
       </div>
       <div class="stat-item">
         <div class="stat-num">100%</div>
-        <div class="stat-label">Code</div>
+        <div class="stat-label">Converting Ads</div>
       </div>
     </div>
   </section>
@@ -310,34 +310,34 @@
   </section>
  
   <!--
-  <!-- Featured Products
-  <section class="section">
-    <div class="section-header reveal">
-      <span class="section-eyebrow">Showcase</span>
-      <h2 class="section-title">Selected<br>Works</h2>
-      <p class="section-sub">A glimpse into digital solutions crafted with precision and passion.</p>
-    </div>
-    <div class="product-grid" id="featured-grid"></div>
-    <div style="text-align:center;margin-top:48px" class="reveal">
-      <button class="btn-secondary" onclick="showPage('portfolio')">
-        Explore Full Portfolio <i class="fa-solid fa-arrow-right"></i>
-      </button>
-    </div>
-  </section>
+    Featured Products
+    <section class="section">
+      <div class="section-header reveal">
+        <span class="section-eyebrow">Showcase</span>
+        <h2 class="section-title">Selected<br>Works</h2>
+        <p class="section-sub">A glimpse into digital solutions crafted with precision and passion.</p>
+      </div>
+      <div class="product-grid" id="featured-grid"></div>
+      <div style="text-align:center;margin-top:48px" class="reveal">
+        <button class="btn-secondary" onclick="showPage('portfolio')">
+          Explore Full Portfolio <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </section>
   -->
   
-<!--
-  <!-- Featured Businesses 
-  <section class="section">
-    <div class="section-header reveal">
-      <span class="section-eyebrow">Advertisers</span>
-      <h2 class="section-title">Featured Businesses</h2>
-      <p class="section-sub">Discover promoted brands and businesses advertising on PraxionHub. <br><u><strong>For you to see advert here refresh the page.</strong></u></p>
-    </div>
-    <div class="business-grid" id="home-featured-businesses"></div>
-    <div style="text-align:center;margin-top:32px" class="reveal">
-      <button class="btn-secondary" onclick="showPage('featured-businesses')">
-        Explore All Businesses And Promote Yours <i class="fa-solid fa-arrow-right"></i>
+  <!--
+    Featured Businesses 
+    <section class="section">
+      <div class="section-header reveal">
+        <span class="section-eyebrow">Advertisers</span>
+        <h2 class="section-title">Featured Businesses</h2>
+        <p class="section-sub">Discover promoted brands and businesses advertising on PraxionHub. <br><u><strong>For you to see advert here refresh the page.</strong></u></p>
+      </div>
+      <div class="business-grid" id="home-featured-businesses"></div>
+      <div style="text-align:center;margin-top:32px" class="reveal">
+        <button class="btn-secondary" onclick="showPage('featured-businesses')">
+          Explore All Businesses And Promote Yours <i class="fa-solid fa-arrow-right"></i>
       </button>
     </div>
   </section>
@@ -527,7 +527,8 @@
         </div>
         <div class="form-row">
           <label class="form-label">Banner Image Upload</label>
-          <input class="form-input" id="ad-banner" type="file" accept="image/png,image/jpeg,image/webp" />
+          <input class="form-input" id="ad-banner" type="file" accept="image/png,image/jpeg,image/webp" onchange="handleAdBannerPreview(event)" />
+          <div id="ad-banner-preview" class="ad-banner-preview"></div>
         </div>
         <div class="form-row">
           <label class="form-label">Advertisement Duration</label>
