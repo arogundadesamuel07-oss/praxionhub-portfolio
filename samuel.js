@@ -166,7 +166,10 @@ function showNewUserPopupIfNeeded() {
 }
 
 function closeNewUserPopup() {
-  document.getElementById('new-user-popup')?.classList.remove('open');
+  const popup = document.getElementById('new-user-popup');
+  if (popup) {
+    popup.classList.remove('open');
+  }
 }
 
 function openFavoritesPanel() {
@@ -1196,7 +1199,7 @@ window.addEventListener('scroll', () => {
 /* ============================================================
    TYPEWRITER EFFECT
 ============================================================ */
-const words = ["Designer.", "Web Developer.", "App Architect.", "Graphics Expert."];
+const words = ["Digital solutions for businesses.", "UI/UX.", "Web development.", "Startups.", "Branding.", "Ambitious creators.", "Graphics expert."];
 let wordIdx = 0, charIdx = 0, isDeleting = false;
 let typewriterEl = null;
 function typeWriter() {

@@ -82,8 +82,8 @@
           <div id="new-user-featured" class="new-user-featured" style="margin-top:12px"></div>
       </div>
       <div class="new-user-actions">
-        <button class="btn-primary" onclick="showPage('featured-businesses'); closeNewUserPopup()">Showcase Your Product</button>
-        <button class="btn-secondary" onclick="closeNewUserPopup()">Maybe later</button>
+        <button class="btn-primary" onclick="showPage('featured-businesses'); closeNewUserPopup(); window.location.href('home')">Showcase Your Product</button>
+        <button class="btn-secondary" onclick="closeNewUserPopup(); window.location.href('home')">Maybe later</button>
       </div>
     </div>
   </div>
@@ -265,15 +265,15 @@
         Available for New Projects — 2026
       </div>
       <h1 class="hero-h1">
-        I Build Digital<br>Experiences That<br><em>Stand Out.</em>
+        I Build Websites<br>& Digital Products That Turn<br><em>Ideas Into Reality.</em>
       </h1>
       <div id="typewriter" class="hero-sub" style="min-height: 1.6em; font-weight: 500; color: var(--accent);"></div>
       <div class="hero-actions">
         <button class="btn-primary" onclick="showPage('portfolio')">
-          View Work <i class="fa-solid fa-arrow-right"></i>
+          View My Work <i class="fa-solid fa-arrow-right"></i>
         </button>
         <button class="btn-secondary" onclick="showPage('contact')">
-          Hire Me
+          Start a Project
         </button>
       </div>
     </div>
@@ -281,15 +281,19 @@
     <div class="hero-stats">
       <div class="stat-item">
         <div class="stat-num">12+</div>
-        <div class="stat-label">Projects Delivered</div>
+        <div class="stat-label">Projects</div>
       </div>
       <div class="stat-item">
-        <div class="stat-num">11</div>
-        <div class="stat-label">Happy Clients</div>
+        <div class="stat-num">11+</div>
+        <div class="stat-label">Clients</div>
       </div>
       <div class="stat-item">
-        <div class="stat-num">100%</div>
-        <div class="stat-label">Converting Ads</div>
+        <div class="stat-num">4+</div>
+        <div class="stat-label">Services</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">24h</div>
+        <div class="stat-label">Response</div>
       </div>
     </div>
   </section>
@@ -299,7 +303,7 @@
     <div class="section-header reveal">
       <span class="section-eyebrow">Advertisers</span>
       <h2 class="section-title">Featured Businesses</h2>
-      <p class="section-sub">Discover promoted brands and businesses advertising on PraxionHub. <br><u><strong>For you to see advert here refresh the page.</strong></u></p>
+      <p class="section-sub">Discover promoted brands and businesses advertising on PraxionHub. <br><u><strong>Be among the first businesses to get feautured on PraxionHub.</strong></u></p>
     </div>
     <div class="business-grid" id="home-featured-businesses"></div>
     <div style="text-align:center;margin-top:32px" class="reveal">
@@ -742,7 +746,7 @@
       </div>
       <div style="background:var(--bg);padding:40px;text-align:center">
         <div style="font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--accent)">30d</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Free Returns</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Post-launch Support</div>
       </div>
     </div>
   </section>
@@ -829,8 +833,15 @@
     <div class="about-story-text reveal">
       <span class="section-eyebrow">The Founder</span>
       <h1 class="section-title">Built for<br>the Bold</h1>
-      <p>I am Samuel Arogundade, a software engineer and creative director dedicated to building high-performance digital products. PraxionHub Design was founded on the principle that code should be as beautiful as it is functional.</p>
-      <p>With a background in full-stack engineering and visual branding, I help businesses bridge the gap between their vision and a market-ready product.</p>
+      <p>I combine software development, design and branding to help bussines turn ideas into polished digital products.</p>
+      <p>
+        <ul><strong>My Process:</strong><hr><br></ul>
+        <p>01 - Discover</p>
+        <p>02 - Design</p>
+        <p>03 - Build</p>
+        <p>04 - Launch</p>
+        <p>05 - Support</p>
+      </p>
       
       <!-- Skills Section -->
       <div class="skills-grid">
