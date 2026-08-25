@@ -153,7 +153,7 @@ function showNewUserPopupIfNeeded() {
           <div style="flex:1">
             <div style="font-weight:700">${title}</div>
             <div style="font-size:13px;color:var(--text-muted);">${desc}</div>
-            <div style="margin-top:6px"><button class="btn-secondary" onclick="window.open('${url}','_blank')">Visit</button></div>
+            <div style="margin-top:6px"><button class="btn-secondary" onclick="window.open('${url}')">Visit</button></div>
           </div>
         </div>`;
     } else {
@@ -538,7 +538,7 @@ function updatePackageAmount() {
   const pkg = pkgEl.value;
   
   // User defined pricing
-  const pricing = { '1': 1000, '2': 2000, '7': 5000, '30': 12000 };
+  const pricing = { '1': 200, '2': 500, '7': 1500, '30': 5000 };
   let amount = pricing[duration] || 0;
 
   // Optional multipliers for packages
