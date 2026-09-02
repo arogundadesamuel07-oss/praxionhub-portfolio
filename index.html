@@ -67,7 +67,9 @@
 ============================================================ -->
 <div class="modal-overlay new-user-popup" id="new-user-popup">
   <div class="modal-box new-user-box">
-    <button class="modal-close" onclick="closeNewUserPopup()"><i class="fa-solid fa-xmark"></i></button>
+    <button type="button" class="modal-close" id="closeNewUserPopup" onclick="closeNewUserPopup()">
+    <i class="fa-solid fa-xmark"></i>
+</button>
     <div class="new-user-content">
       <span class="section-eyebrow">Welcome to PraxionHub</span>
       <h2 class="new-user-title" id="new-user-title">Business showcase live now</h2>
@@ -82,8 +84,8 @@
           <div id="new-user-featured" class="new-user-featured" style="margin-top:12px"></div>
       </div>
       <div class="new-user-actions">
-        <button class="btn-primary" onclick="showPage('featured-businesses'); closeNewUserPopup(); window.location.href('home')">Showcase Your Product</button>
-        <button class="btn-secondary" onclick="closeNewUserPopup(); window.location.href('home')">Maybe later</button>
+        <button class="btn-primary" onclick="closeNewUserPopup(); showPage('advertise')">Showcase Your Product</button>
+        <button class="btn-secondary" onclick="closeNewUserPopup()">Maybe later</button>
       </div>
     </div>
   </div>

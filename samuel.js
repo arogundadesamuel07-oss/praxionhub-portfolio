@@ -17,7 +17,7 @@ let pendingAdData = null;
 ============================================================ */
 const PRODUCTS = [
   { id:1, name:'Pep Diamond Empire', category:'web', price:5200, oldPrice:null, badge:'Live', stars:5, color:'#D4AF37',
-    img:'asset/screenshot-valid.png', url: 'https://pepdiamondempire.netlify.app/#shop' },
+    img:'asset/Peps-D.png', url: 'https://peps-diamond.netlify.app/' },
   { id:2, name:'Luxury Naija Boutique', category:'web', price:5500, oldPrice:null, badge:'Live', stars:5, color:'#3B82F6',
     img:'asset/temitope.png', url: 'https://luxurynaijabuotique.netlify.app/' },
   { id:3, name:'God Favor Lifestyle', category:'web', price:4200, oldPrice:null, badge:'Live', stars:5, color:'#3B82F6',
@@ -77,8 +77,8 @@ function updateFavoriteCount() {
 }
 
 function getFavoriteItem(id) {
-  if (id.startsWith('project-')) {
-    const product = PRODUCTS.find(p => `project-${p.id}` === id);
+  if (id.startsWith('project-grid')) {
+    const product = PRODUCTS.find(p => `project-grid${p.id}` === id);
     if (!product) return null;
     return { id, type:'Project', name: product.name, subtitle: product.category, img: product.img, url: product.url };
   }
@@ -1437,6 +1437,7 @@ const globalFunctions = {
   loginAsAdmin,
   openFavoritesPanel,
   closeFavoritesPanel,
+  closeNewUserPopup,
   toggleFavorite,
   refreshFavoriteButtons,
   renderFavoritesPanel
