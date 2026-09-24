@@ -12,6 +12,23 @@ let ADVERTISEMENTS = [];
 let homeAdInterval = null;
 let pendingAdData = null;
 
+function recordSiteVisit() {
+  try {
+    let visitorId = localStorage.getItem('praxionhubVisitorId');
+    if (!visitorId) {
+      visitorId = crypto.randomUUID();
+      localStorage.setItem('praxionhubVisitorId', visitorId);
+    }
+    supabase.rpc('record_site_visit', { p_visitor_id: visitorId }).catch((error) => {
+      console.warn('Visitor tracking unavailable:', error.message);
+    });
+  } catch (error) {
+    console.warn('Visitor tracking unavailable:', error.message);
+  }
+}
+
+recordSiteVisit();
+
 /* ============================================================
    DATA
 ============================================================ */
@@ -840,7 +857,7 @@ function renderTestimonials() { const track = document.getElementById('testimoni
 function renderBrands() { const track = document.getElementById('brand-track'); if (!track) return; const all = [...BRANDS, ...BRANDS]; track.innerHTML = all.map(b => `<div class="brand-item">${b}</div>`).join(''); }
 
 function showPage(name, updateHash = true) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page, .pager').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => {
     l.classList.toggle('active', l.getAttribute('data-page') === name);
   });
@@ -1019,6 +1036,7 @@ async function handleProjectRequest() {
     const { data: requestData, error: requestError } = await supabase
       .from('client_requests')
       .insert([{ 
+        request_type: 'project',
         project_description: desc,
         subject: 'Project Request: ' + (document.getElementById('request-name').value || 'Quick Request') + ' - ' + desc.substring(0, 20) + '...',
         first_name: document.getElementById('request-name').value || null,
@@ -1217,20 +1235,11 @@ function typeWriter() {
 }
 
 async function loginAsAdmin() {
-  // SECURE IMPROVEMENT: Use Supabase Auth instead of LocalStorage
-  // This is a placeholder for the actual implementation
-  const password = prompt("Enter Admin Access Code:");
-  if (password === "0000") { // Replace with real Auth logic
-    localStorage.setItem('isAdmin', 'true');
-    showPage('admin');
-    showToast('Logged in as Admin', 'success');
-  } else {
-    showToast('Unauthorized Access', 'error');
-  }
+  window.location.href = 'admin/index.html';
 }
 
 function checkAdminAuth() {
-  return localStorage.getItem('isAdmin') === 'true';
+  return false;
 }
 
 function copyToClipboard(text) {
@@ -1291,6 +1300,7 @@ async function handleContact() {
     const { error } = await supabase
       .from('client_requests')
       .insert([{ 
+        request_type: 'contact',
         first_name: fname, 
         last_name: lname,
         email: email, 
@@ -1414,7 +1424,7 @@ const globalFunctions = {
   updateAdStatus,
   deleteAd,
   openAdDetails,
-  handleAdvertiseSubmit,
+  handleAdvertiseSubmit,    
   updatePackageAmount,
   fetchAdvertisements,
   renderHomeFeaturedAds,

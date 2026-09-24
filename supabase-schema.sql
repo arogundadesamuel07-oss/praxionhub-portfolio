@@ -63,6 +63,7 @@ CREATE TABLE client_requests (
   subject TEXT,
   project_description TEXT NOT NULL,
   voice_note_url TEXT,
+  request_type TEXT NOT NULL DEFAULT 'project',
   status TEXT DEFAULT 'new',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -89,6 +90,16 @@ ALTER TABLE advertisers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE advertisements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE client_requests ENABLE ROW LEVEL SECURITY;
 
+-- Unique browser visitor counter. The browser writes through the secure RPC.
+CREATE TABLE site_visits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  visitor_id UUID NOT NULL UNIQUE,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE site_visits ENABLE ROW LEVEL SECURITY;
+
 -- Policies: Categories
 CREATE POLICY "Allow public select on categories" ON categories FOR SELECT USING (true);
 
@@ -102,6 +113,22 @@ CREATE POLICY "Allow public insert on advertisements" ON advertisements FOR INSE
 
 -- Policies: Client Requests
 CREATE POLICY "Allow public insert on client_requests" ON client_requests FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow admins to read site visits" ON site_visits FOR SELECT USING (false);
+
+CREATE OR REPLACE FUNCTION public.record_site_visit(p_visitor_id UUID)
+RETURNS VOID
+LANGUAGE SQL
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  INSERT INTO public.site_visits (visitor_id)
+  VALUES (p_visitor_id)
+  ON CONFLICT (visitor_id)
+  DO UPDATE SET last_seen_at = now();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.record_site_visit(UUID) TO anon, authenticated;
 
 -- 10. Storage Configuration
 INSERT INTO storage.buckets (id, name, public) 

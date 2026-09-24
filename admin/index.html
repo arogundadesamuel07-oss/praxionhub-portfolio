@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PraxionHub Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="admin.css" />
+    <link rel="icon" type="image/png" href="../asset/praxxion.png" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  </head>
+  <body class="admin-body">
+    <div id="admin-app">
+      <section id="auth-screen" class="auth-screen">
+        <div class="auth-card">
+          <div class="auth-brand">
+            <img src="../asset/praxxion.png" alt="PraxionHub" />
+            <div>
+              <span class="eyebrow">PraxionHub</span>
+              <h1>Admin Access</h1>
+            </div>
+          </div>
+
+          <div id="auth-message" class="auth-message is-info">
+            Sign in with an authorized admin account.
+          </div>
+
+          <form id="admin-login-form" class="admin-login-form">
+            <label class="field">
+              <span>Email</span>
+              <input
+                id="admin-email"
+                type="email"
+                placeholder="admin@praxionhub.com"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>Password</span>
+              <input
+                id="admin-password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
+            </label>
+
+            <button id="admin-signin-btn" type="submit" class="primary-btn">
+              <span>Sign in</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <div id="dashboard-screen" class="dashboard-screen hidden">
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <img src="../asset/praxxion.png" alt="PraxionHub logo" />
+            <div>
+              <span>PraxionHub</span>
+              <strong>Admin</strong>
+            </div>
+          </div>
+
+          <nav class="sidebar-nav">
+            <button class="nav-item active" data-view="overview">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Overview</span>
+            </button>
+            <button class="nav-item" data-view="advertisements">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span>Advertisements</span>
+            </button>
+            <button class="nav-item" data-view="requests">
+              <i class="fa-solid fa-inbox"></i>
+              <span>Requests</span>
+            </button>
+            <button class="nav-item" data-view="analytics">
+              <i class="fa-solid fa-chart-column"></i>
+              <span>Analytics</span>
+            </button>
+          </nav>
+
+          <div class="sidebar-footer">
+            <button id="admin-logout-btn" class="secondary-btn">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </aside>
+
+        <main class="main-panel">
+          <header class="topbar">
+            <div>
+              <span class="eyebrow">Dashboard</span>
+              <h2 id="page-title">Overview</h2>
+            </div>
+            <div class="topbar-meta">
+              <div class="status-pill" id="auth-status-pill">
+                <span class="dot"></span>
+                <span>Authenticated</span>
+              </div>
+            </div>
+          </header>
+
+          <section id="view-overview" class="view-panel active">
+            <div class="stats-grid" id="overview-stats"></div>
+
+            <div class="content-grid">
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Recent advertisements</h3>
+                </div>
+                <div id="recent-ads-list" class="list-compact"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Recent requests</h3>
+                </div>
+                <div id="recent-requests-list" class="list-compact"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Customer contacts</h3>
+                </div>
+                <div id="customer-contact-list" class="list-compact"></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="view-advertisements" class="view-panel">
+            <div class="toolbar">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  id="ad-search"
+                  type="text"
+                  placeholder="Search ads, businesses, or email"
+                />
+              </div>
+
+              <select id="ad-status-filter">
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
+            <div class="panel">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Business</th>
+                      <th>Package</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="advertisement-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="view-requests" class="view-panel">
+            <div class="toolbar">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  id="request-search"
+                  type="text"
+                  placeholder="Search client request"
+                />
+              </div>
+
+              <select id="request-status-filter">
+                <option value="all">All statuses</option>
+                <option value="new">New</option>
+                <option value="in_progress">In progress</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div class="panel">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Company</th>
+                      <th>Type</th>
+                      <th>Message</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody id="request-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="view-analytics" class="view-panel">
+            <div class="stats-grid analytics-grid" id="analytics-stats"></div>
+
+            <div class="content-grid">
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Advertisement status split</h3>
+                </div>
+                <div id="status-chart" class="status-chart"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Top performing ads</h3>
+                </div>
+                <div id="top-ads-list" class="list-compact"></div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>

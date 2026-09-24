@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PraxionHub Market place</title>
+
+<link rel="icon" type="image/png" href="asset/praxxion.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link rel="stylesheet" href="samuel.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="samuel.js" type="module" defer></script>
+ 
+<script>
+  // FAIL-SAFE: This runs even if the 'module' script is blocked by the browser (file:// protocol)
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const loader = document.getElementById('loader');
+      if (loader && !loader.classList.contains('done')) {
+        loader.classList.add('done');
+      }
+    }, 1500); 
+  });
+</script>
+</head>
+<body>
+ 
+<!-- ============================================================
+     CURSOR
+============================================================ -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+ 
+<!-- ============================================================
+     SCROLL PROGRESS
+============================================================ -->
+<div id="scroll-progress" title="Scroll to top"></div>
+ 
+<!-- ============================================================
+     LOADER
+============================================================ -->
+<div id="loader">
+  <div class="loader-logo"><img src="asset/praxxion.png" alt="PraxionHub Logo"></div>
+  <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
+  <div class="loader-text">Initializing Praxion Hub...</div>
+</div>
+ 
+<!-- ============================================================
+     TOAST CONTAINER
+============================================================ -->
+<div id="toast-container"></div>
+
+<!-- ============================================================
+     NEW USER WELCOME POPUP
+============================================================ -->
+<div class="modal-overlay new-user-popup" id="new-user-popup">
+  <div class="modal-box new-user-box">
+    <button type="button" class="modal-close" id="closeNewUserPopup" onclick="closeNewUserPopup()">
+    <i class="fa-solid fa-xmark"></i>
+</button>
+    <div class="new-user-content">
+      <span class="section-eyebrow">Welcome to PraxionHub</span>
+      <h2 class="new-user-title" id="new-user-title">Business showcase live now</h2>
+      <p class="new-user-copy">Join a growing community of entrepreneurs already promoting their products on PraxionHub.</p>
+      <div class="new-user-stats">
+        <div><strong id="new-user-business-count">0</strong><span>Featured businesses</span></div>
+        <div><strong>Contact:</strong><span>+234 704 300 5358</span></div>
+      </div>
+      <div class="new-user-list-wrap">
+        <strong>Current showcases</strong>
+        <ul id="new-user-business-list" class="new-user-business-list"></ul>
+          <div id="new-user-featured" class="new-user-featured" style="margin-top:12px"></div>
+      </div>
+      <div class="new-user-actions">
+        <button class="btn-primary" onclick="closeNewUserPopup(); showPage('advertise')">Showcase Your Product</button>
+        <button class="btn-secondary" onclick="closeNewUserPopup()">Maybe later</button>
+      </div>
+    </div>
+  </div>
+
+      <!-- LIVE AD NOTIFICATION POPUP -->
+      <div class="modal-overlay new-user-popup" id="live-ad-popup" style="display:none">
+        <div class="modal-box new-user-box" style="max-width:420px">
+          <button class="modal-close" onclick="document.getElementById('live-ad-popup').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          <div style="display:flex;gap:12px;align-items:center">
+            <img id="live-ad-img" src="asset/praxionhub1.png" alt="ad" style="width:84px;height:84px;object-fit:cover;border-radius:8px;"/>
+            <div>
+              <div style="font-size:13px;color:var(--text-muted);">New Advertisement</div>
+              <div id="live-ad-title" style="font-weight:700;margin-top:6px">Title</div>
+              <div id="live-ad-desc" style="font-size:13px;color:var(--text-muted);margin-top:6px">Short description</div>
+              <div style="margin-top:10px"><button class="btn-primary" id="live-ad-visit-btn" onclick="(function(){const url=window.liveAdUrl||'#'; window.open(url,'_blank');document.getElementById('live-ad-popup').style.display='none';})()">View</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
+ 
+<!-- ============================================================
+     BACK TO TOP
+============================================================ -->
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <i class="fa-solid fa-arrow-up"></i>
+</button>
+
+<!-- FEATURED BUSINESSES PAGE -->
+
+<div class="page" id="page-featured-businesses">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Business Ads</span>
+      <h1 class="section-title">Featured Businesses</h1>
+      <p class="section-sub">Browse advertised businesses, filter by category, and connect directly with promoted brands.</p>
+    </div>
+
+    <div class="business-actions-bar reveal">
+      <div class="search-primary">
+        <div class="search-icon-box"><i class="fa-solid fa-magnifying-glass"></i></div>
+        <input id="business-search" type="text" placeholder="Search businesses, locations, or keywords..." oninput="renderBusinessDirectory()" />
+      </div>
+      
+      <div class="filter-controls-group">
+        <div class="filter-select-wrapper">
+          <i class="fa-solid fa-layer-group"></i>
+          <select id="business-category-filter" onchange="renderBusinessDirectory()">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrapper">
+          <i class="fa-solid fa-circle-check"></i>
+          <select id="business-status-filter" onchange="renderBusinessDirectory()">
+            <option value="all">All Statuses</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending Review</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+
+        <button class="btn-primary advertise-cta-btn" onclick="showPage('advertise')">
+          <i class="fa-solid fa-plus"></i> Advertise
+        </button>
+      </div>
+    </div>
+
+    <div class="business-grid" id="business-directory-grid"></div>
+  </section>
+</div>
+
+<!-- ADVERTISEMENT SUBMISSION PAGE -->
+<div class="page" id="page-advertise">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Advertise</span>
+      <h1 class="section-title">Submit Your Business Advertisement</h1>
+      <p class="section-sub">Create a professional listing, choose a package, and process payment securely with Paystack.</p>
+    </div>
+
+    <div class="advertise-form-card reveal">
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">Business Name</label>
+          <input class="form-input" id="ad-business-name" placeholder="Acme Studios" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Owner Name</label>
+          <input class="form-input" id="ad-owner-name" placeholder="Samuel Arogundade" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" id="ad-email" type="email" placeholder="hello@acmehub.com" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" id="ad-phone" type="tel" placeholder="+234 800 123 4567" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">WhatsApp Number</label>
+          <input class="form-input" id="ad-whatsapp" placeholder="+234 800 123 4567" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Business Category</label>
+          <select class="form-input" id="ad-category"></select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Advertisement Title</label>
+          <input class="form-input" id="ad-title" placeholder="Brand Launch Special" />
+        </div>
+        <div class="form-row form-row-full">
+          <label class="form-label">Advertisement Description</label>
+          <textarea class="form-input" id="ad-description" rows="5" placeholder="Describe your product, service or event in 120-200 words."></textarea>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Website URL</label>
+          <input class="form-input" id="ad-website" type="url" placeholder="https://yourbusiness.com" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Business Location</label>
+          <input class="form-input" id="ad-location" placeholder="Lagos, Nigeria" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">Banner Image Upload</label>
+          <input class="form-input" id="ad-banner" type="file" accept="image/png,image/jpeg,image/webp" onchange="handleAdBannerPreview(event)" />
+          <div id="ad-banner-preview" class="ad-banner-preview"></div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Advertisement Duration</label>
+          <select class="form-input" id="ad-duration" onchange="updatePackageAmount()">
+            <option value="1">1 day (Basic)</option>
+            <option value="2">2 days (Basic)</option>
+            <option value="7">7 days (Basic)</option>
+            <option value="30">30 days (Basic)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Advertisement Package</label>
+          <select class="form-input" id="ad-package" onchange="updatePackageAmount()">
+            <option value="basic">Basic</option>
+            <option value="standard">Standard</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="advertise-sidebar">
+        <div class="package-summary reveal">
+          <h2>Package Summary</h2>
+          <div class="package-detail"><span>Plan</span><strong id="summary-package">...</strong></div>
+          <div class="package-detail"><span>Timeframe</span><strong id="summary-duration">...</strong></div>
+          <div class="package-detail"><span>Total Due</span><strong id="summary-amount">₦0</strong></div>
+          <p class="package-note">Payments are processed securely with Paystack. Your advertisement will be submitted for review after payment.</p>
+        </div>
+        <button id="ad-submit-btn" class="btn-primary submit-btn" style="width: 100%;" onclick="handleAdvertiseSubmit()">Pay & Submit Advertisement</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ADVERTISEMENT DETAILS PAGE -->
+<div class="page" id="page-ad-details">
+  <section class="section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">Advertisement</span>
+      <h1 class="section-title" id="detail-business-name">Business Title</h1>
+      <p class="section-sub" id="detail-business-category">Category • Location</p>
+    </div>
+
+    <div class="ad-detail-layout reveal">
+      <div class="ad-detail-hero" id="detail-banner"></div>
+      <div class="ad-detail-copy">
+        <div class="ad-detail-meta">
+          <span id="detail-status" class="badge"></span>
+          <span id="detail-duration"></span>
+          <span id="detail-expiration"></span>
+        </div>
+        <p id="detail-description"></p>
+        <div class="ad-detail-actions">
+          <a id="detail-website" class="btn-secondary" target="_blank">Visit Website</a>
+          <a id="detail-whatsapp" class="btn-primary" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<!-- WhatsApp Sticky Button -->
+<a href="https://wa.me/2348054813821?text=Hello%20Samuel,%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20discuss%20a%20project." class="whatsapp-sticky" target="_blank" aria-label="Chat on WhatsApp" title="Chat on WhatsApp">
+  <i class="fa-brands fa-whatsapp"></i>
+  Chat Me
+</a>
+  
+</body>
+</html>
