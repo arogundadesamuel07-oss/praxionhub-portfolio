@@ -540,7 +540,11 @@ background: var(--bg-glass); border: 1px solid var(--bg-glass-border); }
   transition: all var(--trans); cursor: none;
   display: inline-flex; align-items: center; gap: 8px;
 }
-.btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+.btn-secondary:hover { background: rgba(255, 255, 255, 0.877); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+.btn-secondary:active{
+  background: rgba(255, 255, 255, 0.637);
+  transition: ease 1.2s;
+}
 .hero-stats {
   position: absolute; right: clamp(20px,6vw,100px); bottom: clamp(40px,8vh,100px);
   display: flex; gap: 40px; animation: heroSlideIn 0.7s 0.9s both;
@@ -1721,7 +1725,7 @@ textarea.form-input { resize: vertical; min-height: 130px; }
 }
 @media (max-width: 600px) {
   .hero { min-height: 94vh; padding-top: 88px; }
-  .hero-content { padding: 20px 0; position: relative; top: 7vh;}
+  .hero-content { padding: 20px 0; position: relative; top: 0vh; background: rgba(0, 0, 0, 0.404); height: 54vh; padding: 64px 0 0 0; border-radius: 30px; corner-shape: squircle;}
   .hero-h1 { font-size: clamp(36px, 9.5vw, 38px); line-height: 0.98; letter-spacing: -2.4px; }
   .hero-sub { font-size: 16px; margin-bottom: 32px; }
   .hero-actions { gap: 10px; justify-content: center; }
